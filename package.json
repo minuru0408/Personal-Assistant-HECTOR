@@ -1,0 +1,12 @@
+{
+  "name": "personal-assistant",
+  "version": "1.0.0",
+  "description": "Personal Assistant Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^29.1.0"
+  }
+}
