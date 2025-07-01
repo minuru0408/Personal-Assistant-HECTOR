@@ -1,0 +1,9 @@
+# at top of .gitignore
+.DS_Store
+
+# dependencies
+node_modules/
+
+# Electron build artifacts (if any)
+dist/
+*.app
