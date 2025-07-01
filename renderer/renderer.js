@@ -1,4 +1,6 @@
-console.log('Renderer loaded')
+console.log("Dashboard renderer loaded");
+
+// TODO: hook up interactivity
 
 // TODO: Add event listeners for command input
 document.querySelector('.command-input').addEventListener('keypress', (e) => {
