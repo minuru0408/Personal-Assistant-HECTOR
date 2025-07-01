@@ -9,3 +9,48 @@ document.querySelector('.command-input').addEventListener('keypress', (e) => {
         console.log('Command entered:', e.target.value)
     }
 })
+
+document.addEventListener('DOMContentLoaded', () => {
+    const cards = document.querySelectorAll('.card');
+    
+    cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        Object.assign(card.style, {
+            position: 'absolute',
+            top: `${rect.top}px`,
+            left: `${rect.left}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`
+        });
+
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+
+        card.addEventListener('pointerdown', e => {
+            isDragging = true;
+            card.setPointerCapture(e.pointerId);
+            card.classList.add('dragging');
+            
+            initialX = e.clientX - parseFloat(card.style.left);
+            initialY = e.clientY - parseFloat(card.style.top);
+        });
+
+        card.addEventListener('pointermove', e => {
+            if (!isDragging) return;
+
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+
+            card.style.left = `${currentX}px`;
+            card.style.top = `${currentY}px`;
+        });
+
+        card.addEventListener('pointerup', e => {
+            isDragging = false;
+            card.classList.remove('dragging');
+        });
+    });
+});

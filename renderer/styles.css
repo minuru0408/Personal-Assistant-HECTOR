@@ -57,6 +57,19 @@ body {
     background: #ffffff;
     border-radius: 8px;
     min-height: 120px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    /* TODO: component content goes here */
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    cursor: grab;
+    transition: box-shadow 0.2s ease;
+    user-select: none;
+}
+
+.card:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.card.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    z-index: 1000;
 }
