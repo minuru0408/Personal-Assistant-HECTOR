@@ -1,6 +1,5 @@
 :root {
-    --frame-color: rgba(255,255,255,0.6);
-    --cell-border: rgba(255,255,255,0.3);
+    --grid-color: rgba(255,255,255,0.6);
 }
 
 html, body {
@@ -11,5 +10,11 @@ html, body {
 
 body {
     background-color: #171717;
-    background-size: 60px 60px;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+}
+
+.grid-cell {
+    border: 1px solid var(--grid-color);
 }
