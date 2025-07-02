@@ -66,6 +66,17 @@ h1 {
     position: relative;
 }
 
+.dashboard::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: 
+        repeating-linear-gradient(to right, transparent 29px, #fff 29px, #fff 31px, transparent 31px),
+        repeating-linear-gradient(to bottom, transparent 29px, #fff 29px, #fff 31px, transparent 31px);
+    background-size: 60px 60px;
+}
+
 .cell {
     border: 1px solid var(--cell-border);
     box-sizing: border-box;
