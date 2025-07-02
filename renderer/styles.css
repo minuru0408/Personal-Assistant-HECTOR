@@ -1,5 +1,6 @@
 :root {
-    --grid-color: rgba(255,255,255,0.6);
+    --frame-color: rgba(255,255,255,0.6);
+    --cell-border: rgba(255,255,255,0.3);
 }
 
 html, body {
@@ -9,12 +10,49 @@ html, body {
 }
 
 body {
+    padding: 0;
     background-color: #171717;
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    grid-template-rows: repeat(6, 1fr);
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.grid-cell {
-    border: 1px solid var(--grid-color);
+.frame {
+    position: absolute;
+    top: 40px;
+    bottom: 40px;
+    left: 40px;
+    right: 40px;
+    border: 1px solid var(--frame-color);
+    background: transparent;
+    box-shadow: none;
+    box-sizing: border-box;
+}
+
+.cell {
+    border: 1px solid var(--cell-border);
+    box-sizing: border-box;
+    position: relative;
+}
+
+.cell::before,
+.cell::after {
+    content: "";
+    position: absolute;
+    background: var(--frame-color);
+}
+
+.cell::before {
+    width: 2px;
+    height: 20%;
+    top: 40%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.cell::after {
+    height: 2px;
+    width: 20%;
+    left: 40%;
+    top: 50%;
+    transform: translateY(-50%);
 }
