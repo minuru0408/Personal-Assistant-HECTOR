@@ -1,3 +1,8 @@
+:root {
+    --frame-color: rgba(255,255,255,0.6);
+    --cell-border: rgba(255,255,255,0.3);
+}
+
 html, body {
     height: 100%;
     margin: 0;
@@ -17,7 +22,7 @@ body {
     bottom: 40px;
     left: 40px;
     right: 40px;
-    border: 1px solid rgba(255,255,255,0.6);
+    border: 1px solid var(--frame-color);
     background: transparent;
     box-shadow: none;
     box-sizing: border-box;
@@ -63,6 +68,30 @@ h1 {
 }
 
 .cell {
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid var(--cell-border);
     box-sizing: border-box;
+    position: relative;
+}
+
+.cell::before,
+.cell::after {
+    content: "";
+    position: absolute;
+    background: var(--frame-color);
+}
+
+.cell::before {
+    width: 2px;
+    height: 20%;
+    top: 40%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.cell::after {
+    height: 2px;
+    width: 20%;
+    left: 40%;
+    top: 50%;
+    transform: translateY(-50%);
 }
