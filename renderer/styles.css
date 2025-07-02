@@ -11,8 +11,5 @@ html, body {
 
 body {
     background-color: #171717;
-    background-image: 
-        repeating-linear-gradient(to right, transparent 29px, rgba(255,255,255,0.6) 29px, rgba(255,255,255,0.6) 31px, transparent 31px),
-        repeating-linear-gradient(to bottom, transparent 29px, rgba(255,255,255,0.6) 29px, rgba(255,255,255,0.6) 31px, transparent 31px);
     background-size: 60px 60px;
 }
