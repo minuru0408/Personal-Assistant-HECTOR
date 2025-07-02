@@ -26,6 +26,17 @@ body {
     box-sizing: border-box;
 }
 
+.frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: 
+        repeating-linear-gradient(to right, transparent 29px, #fff 29px, #fff 31px, transparent 31px),
+        repeating-linear-gradient(to bottom, transparent 29px, #fff 29px, #fff 31px, transparent 31px);
+    background-size: 60px 60px;
+}
+
 header {
     margin-bottom: 2rem;
 }
@@ -53,32 +64,4 @@ h1 {
 .command-input:focus {
     outline: none;
     border-color: #4a9eff;
-}
-
-
-.dashboard {
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    grid-template-rows: repeat(6, 1fr);
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    position: relative;
-}
-
-.dashboard::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image: 
-        repeating-linear-gradient(to right, transparent 29px, #fff 29px, #fff 31px, transparent 31px),
-        repeating-linear-gradient(to bottom, transparent 29px, #fff 29px, #fff 31px, transparent 31px);
-    background-size: 60px 60px;
-}
-
-.cell {
-    border: 1px solid var(--cell-border);
-    box-sizing: border-box;
-    background: transparent;
 }
