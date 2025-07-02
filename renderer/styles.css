@@ -22,7 +22,7 @@ body {
     bottom: 40px;
     left: 40px;
     right: 40px;
-    border: 1px solid var(--frame-color);
+    border: 2px solid var(--frame-color);
     box-sizing: border-box;
 }
 
