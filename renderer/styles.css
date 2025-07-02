@@ -7,14 +7,14 @@ body {
 }
 
 .frame {
-    background-color: #ffffff;
-    margin: 40px;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 0;
+    margin: 40px auto;
     padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
     width: calc(100% - 80px);
     height: calc(100vh - 80px);
-    overflow: hidden;
+    box-shadow: none;
+    background: transparent;
 }
 
 header {
