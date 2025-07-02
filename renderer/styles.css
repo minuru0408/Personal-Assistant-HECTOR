@@ -37,32 +37,7 @@ h1 {
 
 
 .dashboard {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
     padding: 2rem;
     max-width: 1440px;
     margin: 0 auto;
-}
-
-.card {
-    background: #ffffff;
-    border-radius: 8px;
-    min-height: 120px;
-    position: relative;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    cursor: grab;
-    transition: box-shadow 0.2s ease;
-    user-select: none;
-}
-
-.card:hover {
-    cursor: grabbing;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
-}
-
-.card.dragging {
-    cursor: grabbing;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-    z-index: 1000;
 }
