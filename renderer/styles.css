@@ -71,14 +71,11 @@ h1 {
 .dashboard::before {
     content: "";
     position: absolute;
-    top: 40px;
-    left: 40px;
-    right: 40px;
-    bottom: 40px;
+    inset: 40px;
     pointer-events: none;
     background-image: 
-        repeating-linear-gradient(to right, transparent 29px, var(--frame-color) 29px, var(--frame-color) 31px, transparent 31px),
-        repeating-linear-gradient(to bottom, transparent 29px, var(--frame-color) 29px, var(--frame-color) 31px, transparent 31px);
+        repeating-linear-gradient(to right, transparent 59px, var(--frame-color) 59px, var(--frame-color) 61px, transparent 61px),
+        repeating-linear-gradient(to bottom, transparent 59px, var(--frame-color) 59px, var(--frame-color) 61px, transparent 61px);
     background-size: 60px 60px;
 }
 
