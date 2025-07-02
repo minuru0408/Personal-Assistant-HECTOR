@@ -23,8 +23,6 @@ body {
     left: 40px;
     right: 40px;
     border: 1px solid var(--frame-color);
-    background: transparent;
-    box-shadow: none;
     box-sizing: border-box;
 }
 
@@ -66,18 +64,6 @@ h1 {
     height: 100%;
     box-sizing: border-box;
     position: relative;
-    background: transparent;
-}
-
-.dashboard::before {
-    content: "";
-    position: absolute;
-    inset: 40px;
-    pointer-events: none;
-    background-image: 
-        repeating-linear-gradient(to right, transparent 59px, var(--frame-color) 59px, var(--frame-color) 61px, transparent 61px),
-        repeating-linear-gradient(to bottom, transparent 59px, var(--frame-color) 59px, var(--frame-color) 61px, transparent 61px);
-    background-size: 60px 60px;
 }
 
 .cell {
