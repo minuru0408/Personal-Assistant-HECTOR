@@ -1,6 +1,7 @@
 html, body {
     height: 100%;
     margin: 0;
+    overflow: hidden;
 }
 
 body {
@@ -11,14 +12,15 @@ body {
 }
 
 .frame {
-    box-sizing: border-box;
-    width: calc(100% - 80px);
-    height: calc(100% - 80px);
-    margin: 40px auto;
+    position: absolute;
+    top: 40px;
+    bottom: 40px;
+    left: 40px;
+    right: 40px;
     border: 2px solid rgba(255,255,255,0.6);
     background: transparent;
-    border-radius: 0;
-    overflow: hidden;
+    box-shadow: none;
+    box-sizing: border-box;
 }
 
 header {
