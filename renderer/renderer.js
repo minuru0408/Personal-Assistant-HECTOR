@@ -17,39 +17,39 @@ document.addEventListener('DOMContentLoaded', () => {
         const rect = card.getBoundingClientRect();
         Object.assign(card.style, {
             position: 'absolute',
-            top: `${rect.top}px`,
-            left: `${rect.left}px`,
+            top: `${rect.top + window.scrollY}px`,
+            left: `${rect.left + window.scrollX}px`,
             width: `${rect.width}px`,
             height: `${rect.height}px`
         });
 
-        let isDragging = false;
-        let currentX;
-        let currentY;
-        let initialX;
-        let initialY;
+        let dragging = false;
+        let startX;
+        let startY;
+        let origX;
+        let origY;
 
         card.addEventListener('pointerdown', e => {
-            isDragging = true;
             card.setPointerCapture(e.pointerId);
+            startX = e.clientX;
+            startY = e.clientY;
+            origX = parseFloat(card.style.left);
+            origY = parseFloat(card.style.top);
+            dragging = true;
             card.classList.add('dragging');
-            
-            initialX = e.clientX - parseFloat(card.style.left);
-            initialY = e.clientY - parseFloat(card.style.top);
         });
 
         card.addEventListener('pointermove', e => {
-            if (!isDragging) return;
-
-            currentX = e.clientX - initialX;
-            currentY = e.clientY - initialY;
-
-            card.style.left = `${currentX}px`;
-            card.style.top = `${currentY}px`;
+            if (!dragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            card.style.left = `${origX + dx}px`;
+            card.style.top = `${origY + dy}px`;
         });
 
         card.addEventListener('pointerup', e => {
-            isDragging = false;
+            card.releasePointerCapture(e.pointerId);
+            dragging = false;
             card.classList.remove('dragging');
         });
     });
