@@ -66,6 +66,7 @@ h1 {
     height: 100%;
     box-sizing: border-box;
     position: relative;
+    background: transparent;
 }
 
 .dashboard::before {
