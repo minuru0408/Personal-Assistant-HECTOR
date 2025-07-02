@@ -83,4 +83,5 @@ h1 {
 .cell {
     border: 1px solid var(--cell-border);
     box-sizing: border-box;
+    background: transparent;
 }
