@@ -7,7 +7,6 @@ dist/
 
 # Environment files
 .env
-.env.example
 
 # macOS system files
 .DS_Store
