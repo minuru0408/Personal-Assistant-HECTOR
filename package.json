@@ -4,7 +4,7 @@
   "description": "Personal Assistant Desktop App",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron . --no-sandbox"
   },
   "devDependencies": {
     "electron": "^29.1.0"
