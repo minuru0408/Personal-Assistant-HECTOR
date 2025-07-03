@@ -10,3 +10,7 @@ dist/
 
 # macOS system files
 .DS_Store
+
+# Credentials
+service-account.json
+.env
