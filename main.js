@@ -1,5 +1,23 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
+const OpenAI = require('openai')
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+})
+
+ipcMain.handle('send-message', async (event, userText) => {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.5',
+      messages: [{ role: 'user', content: userText }]
+    })
+    return completion.choices[0].message.content
+  } catch (error) {
+    console.error('OpenAI API error:', error)
+    return 'Sorry, I encountered an error. Please try again.'
+  }
+})
 
 function createWindow() {
   const win = new BrowserWindow({
