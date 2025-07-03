@@ -10,7 +10,7 @@ const openai = new OpenAI({
 ipcMain.handle('send-message', async (event, userText) => {
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4.5',
+      model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: userText }]
     })
     return completion.choices[0].message.content
