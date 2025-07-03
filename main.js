@@ -4,6 +4,27 @@ const path = require('path')
 const OpenAI = require('openai')
 const { appendMemory } = require('./memory')
 
+function checkEnv() {
+  const required = [
+    'OPENAI_API_KEY',
+    'SPREADSHEET_ID',
+    'GOOGLE_APPLICATION_CREDENTIALS'
+  ]
+  const missing = required.filter((key) => !process.env[key])
+  if (missing.length) {
+    console.error(
+      `Missing environment variables: ${missing.join(', ')}`
+    )
+    return false
+  }
+  return true
+}
+
+if (!checkEnv()) {
+  app.quit()
+  return
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })

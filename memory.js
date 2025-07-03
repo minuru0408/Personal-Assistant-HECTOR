@@ -4,6 +4,10 @@ let sheets
 let drive
 
 async function initGoogle() {
+  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    console.error('GOOGLE_APPLICATION_CREDENTIALS is not set')
+    return
+  }
   const auth = new google.auth.GoogleAuth({
     keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     scopes: [
@@ -21,6 +25,10 @@ async function appendMemory(time, user, hector) {
     await initGoogle()
   }
   const spreadsheetId = process.env.SPREADSHEET_ID
+  if (!spreadsheetId) {
+    console.error('SPREADSHEET_ID is not set')
+    return
+  }
   try {
     await drive.files.get({ fileId: spreadsheetId })
     await sheets.spreadsheets.values.append({
