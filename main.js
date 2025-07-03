@@ -2,6 +2,7 @@ require('dotenv').config()
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const OpenAI = require('openai')
+const { appendMemory } = require('./memory')
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -20,7 +21,9 @@ ipcMain.handle('send-message', async (event, userText) => {
         { role: 'user', content: userText }
       ]
     })
-    return completion.choices[0].message.content
+    const hectorReply = completion.choices[0].message.content
+    await appendMemory(new Date().toISOString(), userText, hectorReply)
+    return hectorReply
   } catch (error) {
     console.error('OpenAI API error:', error)
     return 'Sorry, I encountered an error. Please try again.'
