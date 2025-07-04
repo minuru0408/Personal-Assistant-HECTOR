@@ -12,6 +12,4 @@ dist/
 .DS_Store
 
 # Credentials
-service-account.json
-.envclient_secret.json
-service-account.json
+client_secret.json
