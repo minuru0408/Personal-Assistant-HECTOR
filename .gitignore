@@ -13,4 +13,5 @@ dist/
 
 # Credentials
 service-account.json
-.env
+.envclient_secret.json
+service-account.json
