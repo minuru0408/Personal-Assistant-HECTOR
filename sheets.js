@@ -7,8 +7,8 @@ async function initializeSheet() {
     try {
         const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID);
         
-        // Read credentials file with explicit path resolution
-        const credentialsPath = path.resolve(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+        // Read credentials from client_secret.json in the project directory
+        const credentialsPath = path.join(__dirname, 'client_secret.json');
         if (!fs.existsSync(credentialsPath)) {
             throw new Error(`Credentials file not found at: ${credentialsPath}`);
         }
