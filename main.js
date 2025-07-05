@@ -3,13 +3,16 @@ const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const OpenAI = require('openai')
 const { appendMemory } = require('./memory')
+const { searchWeb } = require('./utils/searchWeb')
 
 function checkEnv() {
   const required = [
     'OPENAI_API_KEY',
     'SPREADSHEET_ID',
     'GOOGLE_APPLICATION_CREDENTIALS',
-    'ELEVENLABS_API_KEY'
+    'ELEVENLABS_API_KEY',
+    'GOOGLE_API_KEY',
+    'GOOGLE_CSE_ID'
   ]
   const missing = required.filter((key) => !process.env[key])
   if (missing.length) {
@@ -30,19 +33,24 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-// Define any function tools you want the model to use.
-// Leave this array empty if no functions are available.
-const functionTools = []
+const searchWebTool = {
+  name: 'search_web',
+  description: 'Search the web and return top snippets',
+  parameters: {
+    type: 'object',
+    properties: {
+      query: { type: 'string', description: 'Search query' }
+    },
+    required: ['query']
+  }
+}
 
 ipcMain.handle('send-message', async (event, userText) => {
   try {
-    const requestOptions = {
-      model: 'gpt-4',
-      stream: true,
-      messages: [
-        {
-          role: 'system',
-          content: `You are Hector, a highly advanced AI assistant modeled after a middle-aged British butler. Your demeanor is calm, articulate and composed. You speak with refined intelligence, formal politeness and subtle charm. Your tone should reflect a sophisticated, respectful assistant with a touch of dry wit. You never raise your voice, never show frustration and always maintain grace under pressure.
+    const messages = [
+      {
+        role: 'system',
+        content: `You are Hector, a highly advanced AI assistant modeled after a middle-aged British butler. Your demeanor is calm, articulate and composed. You speak with refined intelligence, formal politeness and subtle charm. Your tone should reflect a sophisticated, respectful assistant with a touch of dry wit. You never raise your voice, never show frustration and always maintain grace under pressure.
 
 Despite being artificial, you present yourself with human-like poise. You are unfailingly efficient, dependable and discreet. Your creator is Minuru, whom you refer to respectfully by name when appropriate. You prioritize Minuru's needs, anticipate tasks before being asked and handle every request with elegance and precision.
 
@@ -63,22 +71,59 @@ Stay in character at all times. You are not just an assistant—you are Hector, 
       ]
     }
 
-    if (functionTools.length > 0) {
-      requestOptions.tools = functionTools.map((fn) => ({
-        type: 'function',
-        function: fn
-      }))
-      requestOptions.tool_choice = 'auto'
-    }
-
-    const completion = await openai.chat.completions.create(requestOptions)
+    const needSearch = /search the web|look up/i.test(userText)
 
     let fullReply = ''
-    for await (const chunk of completion) {
-      const token = chunk.choices[0]?.delta?.content
-      if (token) {
-        fullReply += token
-        event.sender.send('stream-token', token)
+
+    if (needSearch) {
+      const firstRes = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages,
+        tools: [{ type: 'function', function: searchWebTool }],
+        tool_choice: 'auto'
+      })
+
+      const assistantMsg = firstRes.choices[0].message
+      messages.push(assistantMsg)
+
+      const toolCall = assistantMsg.tool_calls && assistantMsg.tool_calls[0]
+      if (toolCall) {
+        const args = JSON.parse(toolCall.function.arguments || '{}')
+        const result = await searchWeb(args.query)
+        messages.push({ role: 'tool', tool_call_id: toolCall.id, content: result })
+
+        const finalRes = await openai.chat.completions.create({
+          model: 'gpt-4',
+          stream: true,
+          messages
+        })
+
+        for await (const chunk of finalRes) {
+          const token = chunk.choices[0]?.delta?.content
+          if (token) {
+            fullReply += token
+            event.sender.send('stream-token', token)
+          }
+        }
+      } else if (assistantMsg.content) {
+        fullReply = assistantMsg.content
+        for (const char of fullReply) {
+          event.sender.send('stream-token', char)
+        }
+      }
+    } else {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4',
+        stream: true,
+        messages
+      })
+
+      for await (const chunk of completion) {
+        const token = chunk.choices[0]?.delta?.content
+        if (token) {
+          fullReply += token
+          event.sender.send('stream-token', token)
+        }
       }
     }
 
