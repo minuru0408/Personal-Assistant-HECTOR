@@ -38,8 +38,29 @@ async function checkEnd(history) {
   }
 }
 
+function filterNoise(input, output, threshold = 0.02) {
+  const buf = fs.readFileSync(input);
+  if (buf.length <= 44) return false;
+  const header = buf.subarray(0, 44);
+  const data = Buffer.from(buf.subarray(44));
+  let voiceCount = 0;
+  for (let i = 0; i < data.length; i += 2) {
+    const sample = data.readInt16LE(i);
+    const norm = Math.abs(sample) / 32768;
+    if (norm < threshold) {
+      data.writeInt16LE(0, i);
+    } else {
+      voiceCount++;
+    }
+  }
+  fs.writeFileSync(output, Buffer.concat([header, data]));
+  const ratio = voiceCount / (data.length / 2);
+  return ratio > 0.02;
+}
+
 async function startVoiceEngine() {
   const temp = path.join(__dirname, 'voice.wav');
+  const filtered = path.join(__dirname, 'voice_clean.wav');
   let waiting = true;
   const history = [];
   while (true) {
@@ -56,11 +77,17 @@ async function startVoiceEngine() {
       setTimeout(() => recorder.stop(), 6000);
     });
 
+    const hasVoice = filterNoise(temp, filtered);
+    if (!hasVoice) {
+      console.log('[voiceEngine] \u26a0\ufe0f detected only noise, skipping');
+      continue;
+    }
+
     if (!waiting) {
       console.log('[voiceEngine] \ud83c\udf99\ufe0f starting transcription\u2026');
     }
 
-    const text = await transcribe(temp);
+    const text = await transcribe(filtered);
     const cleaned = text.replace(/[^a-zA-Z0-9]/g, '').trim();
     if (!cleaned || cleaned.length < 2) {
       console.log('[voiceEngine] \u26a0\ufe0f ignoring short transcription \u2192', text);
