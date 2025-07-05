@@ -17,33 +17,36 @@ async function searchWeb(query) {
       params: {
         key: GOOGLE_API_KEY,
         cx: GOOGLE_CSE_ID,
-        q: query,
+        q: encodeURIComponent(query.trim()),
         num: 3
       }
     });
 
     const items = res.data.items;
     if (!items || items.length === 0) {
-      return `I'm afraid I couldn’t find anything useful on that topic, sir.`;
+      return `Regrettably, sir, I couldn’t locate any useful information on that topic.`;
     }
 
     const formatted = items.map((item, i) => {
       const title = item.title || 'Untitled Result';
       const snippet = item.snippet || 'No summary available.';
-      const link = item.link || 'No link available.';
+      const link = item.link || 'No link provided.';
       return `🔹 ${title}\n${snippet}\n${link}`;
     });
 
-    return `Here’s what I found, sir:\n\n${formatted.join('\n\n')}`;
+    return `Here’s what I found for you, sir:\n\n${formatted.join('\n\n')}`;
 
   } catch (error) {
-    console.error('❌ Google search error:', error.response?.data || error.message);
+    const status = error.response?.status || 'unknown';
+    const message = error.response?.data?.error?.message || error.message;
 
-    if (error.response?.status === 400) {
-      return `My sincerest apologies, sir. The search request appears to be invalid. Could you please rephrase it slightly?`;
+    console.error(`❌ Google search error [${status}]:`, message);
+
+    if (status === 400) {
+      return `My sincerest apologies, sir. The request seems to be malformed. Could you kindly rephrase it for me?`;
     }
 
-    return `Apologies, sir. I encountered a difficulty while searching.`;
+    return `Apologies, sir. I ran into an issue while searching. Might I try again shortly?`;
   }
 }
 
