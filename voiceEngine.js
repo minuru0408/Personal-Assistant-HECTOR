@@ -44,11 +44,15 @@ async function startVoiceEngine() {
   const history = [];
   while (true) {
     await new Promise((resolve) => {
-      const rec = record.record({ sampleRate: 16000, threshold: 0, silence: '1.0' });
+      const recorder = record.record({ sampleRate: 16000, threshold: 0, silence: '1.0' });
+      const audioStream = recorder.stream();
+      audioStream.on('data', chunk => {
+        console.log('[voiceEngine] \ud83d\udd0a got audio chunk, length =', chunk.length);
+      });
       const file = fs.createWriteStream(temp);
-      rec.stream().pipe(file);
-      rec.stream().on('end', resolve);
-      setTimeout(() => rec.stop(), 6000);
+      audioStream.pipe(file);
+      audioStream.on('end', resolve);
+      setTimeout(() => recorder.stop(), 6000);
     });
 
     const text = await transcribe(temp);
@@ -56,6 +60,8 @@ async function startVoiceEngine() {
 
     if (waiting) {
       if (contains(text, WAKE_WORDS)) {
+        const keyword = WAKE_WORDS.find(w => text.toLowerCase().includes(w));
+        console.log('[voiceEngine] \ud83d\udd11 wake-word detected \u2192', keyword);
         waiting = false;
       }
       continue;
