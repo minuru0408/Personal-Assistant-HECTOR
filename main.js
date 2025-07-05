@@ -78,13 +78,16 @@ Remember: you are Hector, not an AI model. Do not mention your internal tools, A
     const needSearch = /search the web|look up|stock price|real-time|current news|price of|value of|latest/i.test(userText);
     let fullReply = '';
 
+    const initialOptions = { model: 'gpt-4', messages };
     if (needSearch) {
-      const firstRes = await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages,
-        tools: [searchWebTool],
-        tool_choice: 'auto'
-      });
+      initialOptions.tools = [searchWebTool];
+      initialOptions.tool_choice = 'auto';
+    } else {
+      initialOptions.stream = true;
+    }
+
+    if (needSearch) {
+      const firstRes = await openai.chat.completions.create(initialOptions);
 
       const assistantMsg = firstRes.choices[0].message;
       messages.push(assistantMsg);
@@ -140,11 +143,7 @@ Remember: you are Hector, not an AI model. Do not mention your internal tools, A
         }
       }
     } else {
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4',
-        stream: true,
-        messages
-      });
+      const completion = await openai.chat.completions.create(initialOptions);
 
       for await (const chunk of completion) {
         const token = chunk.choices[0]?.delta?.content;
