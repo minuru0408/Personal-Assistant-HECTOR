@@ -1,16 +1,15 @@
-const { logConversation } = require('./sheets');
+const { appendMemory } = require('./memory');
 
 // ...existing code...
 
 // Add this where you handle messages/responses
 async function handleMessage(message) {
     const timestamp = new Date().toISOString();
-    await logConversation(timestamp, 'User', message);
-    
+
     // Your existing message handling code
     const response = await hector.respond(message);
-    
-    await logConversation(timestamp, 'Hector', response);
+
+    await appendMemory(timestamp, message, response);
     return response;
 }
 

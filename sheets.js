@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+const SHEET_NAME = 'Logs';
+
 async function initializeSheet() {
     try {
         const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID);
@@ -24,7 +26,7 @@ async function initializeSheet() {
         
         await doc.useServiceAccountAuth(credentials);
         await doc.loadInfo();
-        return doc.sheetsByIndex[0];
+        return doc.sheetsByTitle[SHEET_NAME];
     } catch (error) {
         console.error('Sheet initialization error:', error.message);
         if (error.code === 'ENOENT') {
@@ -40,7 +42,7 @@ async function logConversation(time, user, message) {
         await sheet.addRow({
             Time: time,
             User: user,
-            Message: message
+            Hector: message
         });
     } catch (error) {
         console.error('Error logging to sheet:', error);
