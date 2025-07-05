@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const record = require('node-record-lpcm16');
+const { execSync } = require('child_process');
 const OpenAI = require('openai');
 const { BrowserWindow } = require('electron');
 const { appendMemory } = require('./memory');
@@ -33,6 +34,7 @@ function similarity(a, b) {
 
 const WAKE_WORDS = ['hey hector', 'hector', 'hey buddy'];
 const STOP_WORDS = ['hey stop', 'stop'];
+const RECORD_DEVICE = 'Built-in Microphone';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -82,16 +84,28 @@ function filterNoise(input, output, threshold = 0.5) {
   return ratio > 0.02;
 }
 
+function logInputDevices() {
+  if (process.platform !== 'darwin') return;
+  try {
+    const out = execSync('sox -V0 -t coreaudio 2>&1', { encoding: 'utf8' });
+    console.log('[voiceEngine] \ud83d\udd0a available CoreAudio devices:\n' + out);
+  } catch (err) {
+    console.error('[voiceEngine] \u26a0\ufe0f failed to list CoreAudio devices:', err.message);
+  }
+}
+
 async function startVoiceEngine() {
   const temp = path.join(__dirname, 'voice.wav');
   const filtered = path.join(__dirname, 'voice_clean.wav');
+  logInputDevices();
+  console.log('[voiceEngine] \ud83d\udd0a using recording device:', RECORD_DEVICE);
   let waiting = true;
   let lastGptReply = '';
   const history = [];
   while (true) {
 
     await new Promise((resolve) => {
-      const recorder = record.record({ sampleRate: 16000, threshold: 0, silence: '1.0' });
+      const recorder = record.record({ sampleRate: 16000, threshold: 0, silence: '1.0', device: RECORD_DEVICE });
       const audioStream = recorder.stream();
       audioStream.on('data', chunk => {
         console.log('[voiceEngine] \ud83d\udd0a got audio chunk, length =', chunk.length);
