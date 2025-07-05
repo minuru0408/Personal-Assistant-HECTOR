@@ -43,6 +43,7 @@ async function startVoiceEngine() {
   let waiting = true;
   const history = [];
   while (true) {
+
     await new Promise((resolve) => {
       const recorder = record.record({ sampleRate: 16000, threshold: 0, silence: '1.0' });
       const audioStream = recorder.stream();
@@ -55,8 +56,15 @@ async function startVoiceEngine() {
       setTimeout(() => recorder.stop(), 6000);
     });
 
+    if (!waiting) {
+      console.log('[voiceEngine] \ud83c\udf99\ufe0f starting transcription\u2026');
+    }
+
     const text = await transcribe(temp);
     if (!text) continue;
+    if (!waiting) {
+      console.log('[voiceEngine] \u2705 transcription complete \u2192', text);
+    }
 
     if (waiting) {
       if (contains(text, WAKE_WORDS)) {
@@ -75,13 +83,22 @@ async function startVoiceEngine() {
     }
 
     history.push({ role: 'user', content: text });
+    console.log('[voiceEngine] \ud83e\udd16 sending to GPT\u2026');
     let reply = '';
     const win = BrowserWindow.getAllWindows()[0];
     if (win) {
-      reply = await chatWithGPT(text, (t) => win.webContents.send('stream-token', t));
+      let spokenLogged = false;
+      reply = await chatWithGPT(text, (t) => {
+        if (!spokenLogged) {
+          console.log('[voiceEngine] \ud83d\udd08 speaking reply\u2026');
+          spokenLogged = true;
+        }
+        win.webContents.send('stream-token', t);
+      });
     } else {
       reply = await chatWithGPT(text);
     }
+    console.log('[voiceEngine] \ud83d\udcac GPT replied \u2192', reply);
     history.push({ role: 'assistant', content: reply });
     await appendMemory(new Date().toISOString(), text, reply);
 
