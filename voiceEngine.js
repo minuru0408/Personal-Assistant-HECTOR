@@ -7,6 +7,30 @@ const { appendMemory } = require('./memory');
 const { chatWithGPT } = require('./chat');
 require('dotenv').config();
 
+function levenshtein(a, b) {
+  const matrix = Array.from({ length: b.length + 1 }, () => []);
+  for (let i = 0; i <= b.length; i++) matrix[i][0] = i;
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      const cost = a[j - 1] === b[i - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+function similarity(a, b) {
+  if (!a || !b) return 0;
+  const distance = levenshtein(a, b);
+  const maxLen = Math.max(a.length, b.length);
+  return maxLen === 0 ? 1 : 1 - distance / maxLen;
+}
+
 const WAKE_WORDS = ['hey hector', 'hector', 'hey buddy'];
 const STOP_WORDS = ['hey stop', 'stop'];
 
@@ -62,6 +86,7 @@ async function startVoiceEngine() {
   const temp = path.join(__dirname, 'voice.wav');
   const filtered = path.join(__dirname, 'voice_clean.wav');
   let waiting = true;
+  let lastGptReply = '';
   const history = [];
   while (true) {
 
@@ -113,8 +138,17 @@ async function startVoiceEngine() {
       continue;
     }
 
+    const normText = cleaned.toLowerCase();
+    const normReply = lastGptReply.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const sim = similarity(normText, normReply);
+    if (sim > 0.8 || normReply.includes(normText) || normText.includes(normReply)) {
+      console.log('[voiceEngine] \ud83d\udd0c ignoring self transcription \u2192', text);
+      continue;
+    }
+
     const win = BrowserWindow.getAllWindows()[0];
     if (win) {
+      win.webContents.send('cancel-tts');
       win.webContents.send('voice-text', text);
     }
 
@@ -134,6 +168,7 @@ async function startVoiceEngine() {
       reply = await chatWithGPT(text);
     }
     console.log('[voiceEngine] \ud83d\udcac GPT replied \u2192', reply);
+    lastGptReply = reply;
     history.push({ role: 'assistant', content: reply });
     await appendMemory(new Date().toISOString(), text, reply);
     if (win) {
