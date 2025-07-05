@@ -7,6 +7,6 @@ The app now checks that all required environment variables are set
 and will exit with a helpful message if any are missing.
 
 1. Copy `.env.example` to `.env`.
-2. Replace the example values in `.env` with your own keys, including `ELEVENLABS_API_KEY` if you want voice output.
+2. Replace the example values in `.env` with your own keys. Set `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` to enable spoken replies.
 3. Install dependencies with `npm install`.
 4. Start the app with `npm start`.
