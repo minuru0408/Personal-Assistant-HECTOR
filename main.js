@@ -26,6 +26,9 @@ if (!checkEnv()) {
   return;
 }
 
+// Allow audio playback without requiring a user gesture
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 
 ipcMain.handle('send-message', async (event, userText) => {
   try {
