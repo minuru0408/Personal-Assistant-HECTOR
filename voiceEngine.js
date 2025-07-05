@@ -34,7 +34,7 @@ function similarity(a, b) {
 
 const WAKE_WORDS = ['hey hector', 'hector', 'hey buddy'];
 const STOP_WORDS = ['hey stop', 'stop'];
-const RECORD_DEVICE = 'Built-in Microphone';
+const RECORD_DEVICE = 'default';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -105,12 +105,22 @@ async function startVoiceEngine() {
   while (true) {
 
     await new Promise((resolve) => {
-      const recorder = record.record({ sampleRate: 16000, threshold: 0, silence: '1.0', device: RECORD_DEVICE });
+      console.log('[voiceEngine] \ud83c\udf99\ufe0f recording from default device at 16kHz mono');
+      const recorder = record.record({
+        sampleRate: 16000,
+        channels: 1,
+        audioType: 'wav',
+        threshold: 0,
+        verbose: true,
+        recorder: 'sox',
+        device: RECORD_DEVICE,
+        silence: '1.0'
+      });
       const audioStream = recorder.stream();
       audioStream.on('data', chunk => {
         console.log('[voiceEngine] \ud83d\udd0a got audio chunk, length =', chunk.length);
       });
-      const file = fs.createWriteStream(temp);
+      const file = fs.createWriteStream(temp, { encoding: 'binary' });
       audioStream.pipe(file);
       audioStream.on('end', resolve);
       setTimeout(() => recorder.stop(), 6000);
