@@ -12,5 +12,4 @@ dist/
 .DS_Store
 
 # Credentials
-hector-alpha-7be6f2f40def.json
-hector-alpha-955a90627ba0.json
+client_secret.json
