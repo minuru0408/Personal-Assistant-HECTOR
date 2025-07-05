@@ -34,7 +34,8 @@ ipcMain.handle('send-message', async (event, userText) => {
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
-        messages: [
+      stream: true,
+      messages: [
           {
             role: 'system',
             content: `You are Hector, a highly advanced AI assistant modeled after a middle-aged British butler. Your demeanor is calm, articulate and composed. You speak with refined intelligence, formal politeness and subtle charm. Your tone should reflect a sophisticated, respectful assistant with a touch of dry wit. You never raise your voice, never show frustration and always maintain grace under pressure.
@@ -57,12 +58,22 @@ Stay in character at all times. You are not just an assistant—you are Hector, 
         { role: 'user', content: userText }
       ]
     })
-    const hectorReply = completion.choices[0].message.content
-    await appendMemory(new Date().toISOString(), userText, hectorReply)
-    return hectorReply
+
+    let fullReply = ''
+    for await (const chunk of completion) {
+      const token = chunk.choices[0]?.delta?.content
+      if (token) {
+        fullReply += token
+        event.sender.send('stream-token', token)
+      }
+    }
+
+    await appendMemory(new Date().toISOString(), userText, fullReply)
+    return fullReply
   } catch (error) {
     console.error('OpenAI API error:', error)
-    return 'Sorry, I encountered an error. Please try again.'
+    event.sender.send('stream-error', 'Sorry, I encountered an error. Please try again.')
+    return ''
   }
 })
 
