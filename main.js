@@ -78,10 +78,12 @@ Remember: you are Hector, not an AI model. Do not mention your internal tools, A
 
     let fullReply = '';
 
-    // First send the user message without any tools
+    // First send the user message with the available tools so GPT can
+    // decide whether to call one of them (e.g. search_web for real-time data)
     const firstRes = await openai.chat.completions.create({
       model: 'gpt-4',
-      messages
+      messages,
+      tools: [searchWebTool]
     });
 
     const assistantMsg = firstRes.choices[0].message;
