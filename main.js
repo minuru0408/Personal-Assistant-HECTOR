@@ -75,82 +75,68 @@ Remember: you are Hector, not an AI model. Do not mention your internal tools, A
       { role: 'user', content: userText }
     ];
 
-    const needSearch = /search the web|look up|stock price|real-time|current news|price of|value of|latest/i.test(userText);
     let fullReply = '';
 
-    const initialOptions = { model: 'gpt-4', messages };
-    if (needSearch) {
-      initialOptions.tools = [searchWebTool];
-      initialOptions.tool_choice = 'auto';
-    } else {
-      initialOptions.stream = true;
-    }
+    // First send the user message without any tools
+    const firstRes = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages
+    });
 
-    if (needSearch) {
-      const firstRes = await openai.chat.completions.create(initialOptions);
+    const assistantMsg = firstRes.choices[0].message;
+    messages.push(assistantMsg);
 
-      const assistantMsg = firstRes.choices[0].message;
-      messages.push(assistantMsg);
+    const toolCall = assistantMsg.tool_calls?.[0];
 
-      const toolCall = assistantMsg.tool_calls?.[0];
-
-      if (toolCall) {
-        let args = {};
-        try {
-          const rawArgs = toolCall.function.arguments;
-          if (typeof rawArgs === 'string') {
-            args = JSON.parse(rawArgs);
-          } else if (typeof rawArgs === 'object' && rawArgs !== null) {
-            args = rawArgs;
-          } else {
-            throw new Error('Unexpected arguments format');
-          }
-
-          if (!args.query || typeof args.query !== 'string' || args.query.trim() === '') {
-            throw new Error('Missing or empty query');
-          }
-        } catch (err) {
-          console.error('❌ Failed to parse tool arguments:', err);
-          event.sender.send('stream-token', "I’m terribly sorry, sir. It seems the query I received was incomplete or malformed. Might I kindly ask you to rephrase?");
-          return '';
+    if (toolCall) {
+      let args = {};
+      try {
+        const rawArgs = toolCall.function.arguments;
+        if (typeof rawArgs === 'string') {
+          args = JSON.parse(rawArgs);
+        } else if (typeof rawArgs === 'object' && rawArgs !== null) {
+          args = rawArgs;
+        } else {
+          throw new Error('Unexpected arguments format');
         }
 
-        const result = await searchWeb(args.query);
-
-        messages.push({
-          role: 'tool',
-          content: result,
-          tool_call_id: toolCall.id
-        });
-
-        const finalRes = await openai.chat.completions.create({
-          model: 'gpt-4',
-          stream: true,
-          messages
-        });
-
-        for await (const chunk of finalRes) {
-          const token = chunk.choices[0]?.delta?.content;
-          if (token) {
-            fullReply += token;
-            event.sender.send('stream-token', token);
-          }
+        if (!args.query || typeof args.query !== 'string' || args.query.trim() === '') {
+          throw new Error('Missing or empty query');
         }
-      } else if (assistantMsg.content) {
-        fullReply = assistantMsg.content;
-        for (const char of fullReply) {
-          event.sender.send('stream-token', char);
-        }
+      } catch (err) {
+        console.error('❌ Failed to parse tool arguments:', err);
+        event.sender.send('stream-token', "I’m terribly sorry, sir. It seems the query I received was incomplete or malformed. Might I kindly ask you to rephrase?");
+        return '';
       }
-    } else {
-      const completion = await openai.chat.completions.create(initialOptions);
 
-      for await (const chunk of completion) {
+      const result = await searchWeb(args.query);
+
+      messages.push({
+        role: 'tool',
+        content: result,
+        tool_call_id: toolCall.id
+      });
+
+      // Send the tool result back to GPT-4 for a final answer
+      const finalRes = await openai.chat.completions.create({
+        model: 'gpt-4',
+        stream: true,
+        messages,
+        tools: [searchWebTool]
+      });
+
+      for await (const chunk of finalRes) {
         const token = chunk.choices[0]?.delta?.content;
         if (token) {
           fullReply += token;
           event.sender.send('stream-token', token);
         }
+      }
+    } else if (assistantMsg.content) {
+      fullReply = assistantMsg.content;
+      // Stream the already completed message character by character
+      for (const char of fullReply) {
+        event.sender.send('stream-token', char);
       }
     }
 
