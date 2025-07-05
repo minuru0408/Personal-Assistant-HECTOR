@@ -1,29 +1,28 @@
-const { ipcRenderer } = require('electron')
-const axios = require('axios')
-const { Howl } = require('howler')
+const { Howl, sendMessage, elevenLabsApiKey } = window.electronAPI
 
 async function speakText(text) {
-    const apiKey = process.env.ELEVENLABS_API_KEY
+    const apiKey = elevenLabsApiKey
     if (!apiKey) {
         console.error('ELEVENLABS_API_KEY is not set')
         return
     }
 
     try {
-        const response = await axios.post(
+        const response = await fetch(
             'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
-            { text },
             {
+                method: 'POST',
                 headers: {
                     'xi-api-key': apiKey,
                     'Content-Type': 'application/json',
                     Accept: 'audio/mpeg'
                 },
-                responseType: 'arraybuffer'
+                body: JSON.stringify({ text })
             }
         )
 
-        const blob = new Blob([response.data], { type: 'audio/mpeg' })
+        const arrayBuffer = await response.arrayBuffer()
+        const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' })
         const url = URL.createObjectURL(blob)
         const sound = new Howl({ src: [url] })
         sound.play()
@@ -51,7 +50,7 @@ document.querySelector('.chat-input-bar').addEventListener('submit', async (e) =
     
     // Get AI response
     try {
-        const response = await ipcRenderer.invoke('send-message', userText)
+        const response = await sendMessage(userText)
         const aiMessage = document.createElement('div')
         aiMessage.className = 'message assistant'
         aiMessage.textContent = response
