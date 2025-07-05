@@ -64,7 +64,7 @@ async function checkEnd(history) {
   }
 }
 
-function filterNoise(input, output, threshold = 0.5) {
+function filterNoise(input, output, threshold = 0.003) {
   const buf = fs.readFileSync(input);
   if (buf.length <= 44) return false;
   const header = buf.subarray(0, 44);
