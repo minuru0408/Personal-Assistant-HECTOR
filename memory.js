@@ -1,6 +1,7 @@
 const { google } = require('googleapis')
 
 let sheets
+const SHEET_NAME = 'Logs'
 
 async function initGoogle() {
   if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
@@ -29,10 +30,10 @@ async function appendMemory(time, user, hector) {
   try {
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: 'HECTOR_Memory_Log!A:C',
+      range: `${SHEET_NAME}!A:C`,
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
-      requestBody: { 
+      requestBody: {
         values: [[time, user, hector]]
       }
     })
