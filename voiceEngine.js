@@ -151,11 +151,11 @@ async function startVoiceEngine() {
       continue;
     }
 
-    const normText = cleaned.toLowerCase();
-    const normReply = lastGptReply.replace(/[^a-zA-Z0-9 ]/g, '').toLowerCase();
+    const normText = text.trim().toLowerCase();
+    const normReply = lastGptReply.trim().toLowerCase();
     const sim = similarity(normText, normReply);
-    if (wordCount > 12 && sim > 0.8) {
-      console.log('[voiceEngine] \ud83d\udd0c ignoring self transcription \u2192', text);
+    if (wordCount > 6 && sim > 0.9) {
+      console.log('[voiceEngine] \ud83d\udd01 ignoring self transcription \u2192', text);
       continue;
     }
 
@@ -181,7 +181,7 @@ async function startVoiceEngine() {
       reply = await chatWithGPT(text);
     }
     console.log('[voiceEngine] \ud83d\udcac GPT replied \u2192', reply);
-    lastGptReply = reply;
+    lastGptReply = reply.trim();
     history.push({ role: 'assistant', content: reply });
     await appendMemory(new Date().toISOString(), text, reply);
     if (win) {
