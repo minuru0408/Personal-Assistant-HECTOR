@@ -61,7 +61,11 @@ async function startVoiceEngine() {
     }
 
     const text = await transcribe(temp);
-    if (!text) continue;
+    const cleaned = text.replace(/[^a-zA-Z0-9]/g, '').trim();
+    if (!cleaned || cleaned.length < 2) {
+      console.log('[voiceEngine] \u26a0\ufe0f ignoring short transcription \u2192', text);
+      continue;
+    }
     if (!waiting) {
       console.log('[voiceEngine] \u2705 transcription complete \u2192', text);
     }
@@ -82,10 +86,14 @@ async function startVoiceEngine() {
       continue;
     }
 
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win) {
+      win.webContents.send('voice-text', text);
+    }
+
     history.push({ role: 'user', content: text });
     console.log('[voiceEngine] \ud83e\udd16 sending to GPT\u2026');
     let reply = '';
-    const win = BrowserWindow.getAllWindows()[0];
     if (win) {
       let spokenLogged = false;
       reply = await chatWithGPT(text, (t) => {
@@ -101,6 +109,9 @@ async function startVoiceEngine() {
     console.log('[voiceEngine] \ud83d\udcac GPT replied \u2192', reply);
     history.push({ role: 'assistant', content: reply });
     await appendMemory(new Date().toISOString(), text, reply);
+    if (win) {
+      win.webContents.send('voice-reply', reply);
+    }
 
     const end = await checkEnd(history);
     if (end) {
