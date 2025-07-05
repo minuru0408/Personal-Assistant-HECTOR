@@ -95,13 +95,20 @@ Remember: you are Hector, not an AI model. Do not mention your internal tools, A
         let args = {};
         try {
           const rawArgs = toolCall.function.arguments;
-          args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : {};
+          if (typeof rawArgs === 'string') {
+            args = JSON.parse(rawArgs);
+          } else if (typeof rawArgs === 'object' && rawArgs !== null) {
+            args = rawArgs;
+          } else {
+            throw new Error('Unexpected arguments format');
+          }
+
           if (!args.query || typeof args.query !== 'string' || args.query.trim() === '') {
             throw new Error('Missing or empty query');
           }
         } catch (err) {
-          console.error("❌ Failed to parse tool arguments:", err.message);
-          event.sender.send('stream-token', "I’m terribly sorry, sir. The search request was not properly formed. Could you kindly rephrase it?");
+          console.error('❌ Failed to parse tool arguments:', err);
+          event.sender.send('stream-token', "I’m terribly sorry, sir. It seems the query I received was incomplete or malformed. Might I kindly ask you to rephrase?");
           return '';
         }
 
