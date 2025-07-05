@@ -8,7 +8,8 @@ function checkEnv() {
   const required = [
     'OPENAI_API_KEY',
     'SPREADSHEET_ID',
-    'GOOGLE_APPLICATION_CREDENTIALS'
+    'GOOGLE_APPLICATION_CREDENTIALS',
+    'ELEVENLABS_API_KEY'
   ]
   const missing = required.filter((key) => !process.env[key])
   if (missing.length) {
