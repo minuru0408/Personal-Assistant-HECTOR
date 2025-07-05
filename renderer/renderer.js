@@ -1,4 +1,4 @@
-const { Howl, sendMessage, elevenLabsApiKey } = window.electronAPI
+const { sendMessage, elevenLabsApiKey } = window.electronAPI
 
 async function speakText(text) {
     const apiKey = elevenLabsApiKey
@@ -24,8 +24,8 @@ async function speakText(text) {
         const arrayBuffer = await response.arrayBuffer()
         const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' })
         const url = URL.createObjectURL(blob)
-        const sound = new Howl({ src: [url] })
-        sound.play()
+        const audio = new Audio(url)
+        audio.play()
     } catch (error) {
         console.error('Failed to get audio from ElevenLabs:', error)
     }
