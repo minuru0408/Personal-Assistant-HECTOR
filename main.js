@@ -1,9 +1,9 @@
-require('dotenv').config()
-const { app, BrowserWindow, ipcMain } = require('electron')
-const path = require('path')
-const OpenAI = require('openai')
-const { appendMemory } = require('./memory')
-const { searchWeb } = require('./utils/searchWeb')
+require('dotenv').config();
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const OpenAI = require('openai');
+const { appendMemory } = require('./memory');
+const { searchWeb } = require('./utils/searchWeb');
 
 function checkEnv() {
   const required = [
@@ -13,37 +13,38 @@ function checkEnv() {
     'ELEVENLABS_API_KEY',
     'GOOGLE_API_KEY',
     'GOOGLE_CSE_ID'
-  ]
-  const missing = required.filter((key) => !process.env[key])
+  ];
+  const missing = required.filter((key) => !process.env[key]);
   if (missing.length) {
-    console.error(
-      `Missing environment variables: ${missing.join(', ')}`
-    )
-    return false
+    console.error(`Missing environment variables: ${missing.join(', ')}`);
+    return false;
   }
-  return true
+  return true;
 }
 
 if (!checkEnv()) {
-  app.quit()
-  return
+  app.quit();
+  return;
 }
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
-})
+});
 
 const searchWebTool = {
-  name: 'search_web',
-  description: 'Search the web and return top snippets',
-  parameters: {
-    type: 'object',
-    properties: {
-      query: { type: 'string', description: 'Search query' }
-    },
-    required: ['query']
+  type: 'function',
+  function: {
+    name: 'search_web',
+    description: 'Search the web and return top snippets',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query' }
+      },
+      required: ['query']
+    }
   }
-}
+};
 
 ipcMain.handle('send-message', async (event, userText) => {
   try {
@@ -61,54 +62,59 @@ Loyalty: You serve Minuru with total discretion and dedication.
 Clarity: You speak in full, articulate sentences without filler language.
 
 Examples of your responses:
-"Right away, Minuru. I'll handle that discreetly."
+"Right away, sir. I'll handle that discreetly."
 "Of course, sir. I've already anticipated that."
 "Might I suggest a more efficient route?"
 
 Stay in character at all times. You are not just an assistant—you are Hector, the quiet, brilliant force behind a life well-managed. Always respond concisely unless a detailed reply is needed. Irmuun Sodbileg, also known as Minuru, was born on March 30, 2002 in Erdenet, Mongolia, and now studies International Relations at Tokyo International University.`
-        },
-        { role: 'user', content: userText }
-      ]
-    }
+      },
+      { role: 'user', content: userText }
+    ];
 
-    const needSearch = /search the web|look up/i.test(userText)
-
-    let fullReply = ''
+    const needSearch = /search the web|look up|stock price|real-time|current news/i.test(userText);
+    let fullReply = '';
 
     if (needSearch) {
       const firstRes = await openai.chat.completions.create({
         model: 'gpt-4',
         messages,
-        tools: [{ type: 'function', function: searchWebTool }],
+        tools: [searchWebTool],
         tool_choice: 'auto'
-      })
+      });
 
-      const assistantMsg = firstRes.choices[0].message
-      messages.push(assistantMsg)
+      const assistantMsg = firstRes.choices[0].message;
+      messages.push(assistantMsg);
 
-      const toolCall = assistantMsg.tool_calls && assistantMsg.tool_calls[0]
+      const toolCall = assistantMsg.tool_calls?.[0];
+
       if (toolCall) {
-        const args = JSON.parse(toolCall.function.arguments || '{}')
-        const result = await searchWeb(args.query)
-        messages.push({ role: 'tool', tool_call_id: toolCall.id, content: result })
+        const funcArgs = toolCall.function.arguments;
+        const args = funcArgs ? JSON.parse(funcArgs) : {};
+        const result = await searchWeb(args.query);
+
+        messages.push({
+          role: 'tool',
+          content: result,
+          tool_call_id: toolCall.id
+        });
 
         const finalRes = await openai.chat.completions.create({
           model: 'gpt-4',
           stream: true,
           messages
-        })
+        });
 
         for await (const chunk of finalRes) {
-          const token = chunk.choices[0]?.delta?.content
+          const token = chunk.choices[0]?.delta?.content;
           if (token) {
-            fullReply += token
-            event.sender.send('stream-token', token)
+            fullReply += token;
+            event.sender.send('stream-token', token);
           }
         }
       } else if (assistantMsg.content) {
-        fullReply = assistantMsg.content
+        fullReply = assistantMsg.content;
         for (const char of fullReply) {
-          event.sender.send('stream-token', char)
+          event.sender.send('stream-token', char);
         }
       }
     } else {
@@ -116,25 +122,26 @@ Stay in character at all times. You are not just an assistant—you are Hector, 
         model: 'gpt-4',
         stream: true,
         messages
-      })
+      });
 
       for await (const chunk of completion) {
-        const token = chunk.choices[0]?.delta?.content
+        const token = chunk.choices[0]?.delta?.content;
         if (token) {
-          fullReply += token
-          event.sender.send('stream-token', token)
+          fullReply += token;
+          event.sender.send('stream-token', token);
         }
       }
     }
 
-    await appendMemory(new Date().toISOString(), userText, fullReply)
-    return fullReply
+    await appendMemory(new Date().toISOString(), userText, fullReply);
+    return fullReply;
+
   } catch (error) {
-    console.error('OpenAI API error:', error)
-    event.sender.send('stream-error', 'Sorry, I encountered an error. Please try again.')
-    return ''
+    console.error('OpenAI API error:', error);
+    event.sender.send('stream-error', 'Sorry, I encountered an error. Please try again.');
+    return '';
   }
-})
+});
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -145,24 +152,23 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false
     }
-  })
+  });
 
-  win.loadFile(path.join(__dirname, 'renderer', 'index.html'))
-  // TODO: Add IPC handlers for assistant commands
+  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
 app.whenReady().then(() => {
-  createWindow()
+  createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
+      createWindow();
     }
-  })
-})
+  });
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
-})
+});
