@@ -1,4 +1,36 @@
 const { ipcRenderer } = require('electron')
+const axios = require('axios')
+const { Howl } = require('howler')
+
+async function speakText(text) {
+    const apiKey = process.env.ELEVENLABS_API_KEY
+    if (!apiKey) {
+        console.error('ELEVENLABS_API_KEY is not set')
+        return
+    }
+
+    try {
+        const response = await axios.post(
+            'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
+            { text },
+            {
+                headers: {
+                    'xi-api-key': apiKey,
+                    'Content-Type': 'application/json',
+                    Accept: 'audio/mpeg'
+                },
+                responseType: 'arraybuffer'
+            }
+        )
+
+        const blob = new Blob([response.data], { type: 'audio/mpeg' })
+        const url = URL.createObjectURL(blob)
+        const sound = new Howl({ src: [url] })
+        sound.play()
+    } catch (error) {
+        console.error('Failed to get audio from ElevenLabs:', error)
+    }
+}
 
 document.querySelector('.chat-input-bar').addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -24,6 +56,7 @@ document.querySelector('.chat-input-bar').addEventListener('submit', async (e) =
         aiMessage.className = 'message assistant'
         aiMessage.textContent = response
         chatWindow.appendChild(aiMessage)
+        speakText(response)
     } catch (error) {
         console.error('Failed to get AI response:', error)
         const errorMessage = document.createElement('div')
