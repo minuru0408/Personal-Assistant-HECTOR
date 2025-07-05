@@ -35,6 +35,10 @@ ipcMain.handle('send-message', async (event, userText) => {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       stream: true,
+      tools: [
+        { type: 'web_search' }
+      ],
+      tool_choice: 'auto',
       messages: [
           {
             role: 'system',
