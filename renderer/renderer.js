@@ -2,11 +2,13 @@ const {
     sendMessage,
     onStreamToken,
     onStreamError,
+    onCancelTts,
     elevenLabsApiKey,
     elevenLabsVoiceId
 } = window.electronAPI
 
 let audioQueue = Promise.resolve()
+let currentAudio = null
 
 // queue and throttling state
 let pendingText = ''
@@ -70,10 +72,11 @@ async function processQueue() {
         const blob = new Blob([buf], { type: 'audio/mpeg' })
         const url = URL.createObjectURL(blob)
         const audio = new Audio(url)
+        currentAudio = audio
         audioQueue = audioQueue.then(
             () =>
                 new Promise((resolve) => {
-                    audio.onended = resolve
+                    audio.onended = () => { currentAudio = null; resolve() }
                     audio.play()
                 })
         )
@@ -85,6 +88,15 @@ async function processQueue() {
         if (pendingText) {
             processQueue()
         }
+    }
+}
+
+function stopCurrentAudio() {
+    if (currentAudio) {
+        currentAudio.pause()
+        currentAudio = null
+        audioQueue = Promise.resolve()
+        pendingText = ''
     }
 }
 
@@ -109,6 +121,10 @@ onStreamError((msg) => {
         currentAiMessage.classList.add('error')
         currentAiMessage.textContent = msg
     }
+})
+
+onCancelTts(() => {
+    stopCurrentAudio()
 })
 
 document.querySelector('.chat-input-bar').addEventListener('submit', async (e) => {
