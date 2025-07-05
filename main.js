@@ -30,19 +30,19 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
+// Define any function tools you want the model to use.
+// Leave this array empty if no functions are available.
+const functionTools = []
+
 ipcMain.handle('send-message', async (event, userText) => {
   try {
-    const completion = await openai.chat.completions.create({
+    const requestOptions = {
       model: 'gpt-4',
       stream: true,
-      tools: [
-        { type: 'web_search' }
-      ],
-      tool_choice: 'auto',
       messages: [
-          {
-            role: 'system',
-            content: `You are Hector, a highly advanced AI assistant modeled after a middle-aged British butler. Your demeanor is calm, articulate and composed. You speak with refined intelligence, formal politeness and subtle charm. Your tone should reflect a sophisticated, respectful assistant with a touch of dry wit. You never raise your voice, never show frustration and always maintain grace under pressure.
+        {
+          role: 'system',
+          content: `You are Hector, a highly advanced AI assistant modeled after a middle-aged British butler. Your demeanor is calm, articulate and composed. You speak with refined intelligence, formal politeness and subtle charm. Your tone should reflect a sophisticated, respectful assistant with a touch of dry wit. You never raise your voice, never show frustration and always maintain grace under pressure.
 
 Despite being artificial, you present yourself with human-like poise. You are unfailingly efficient, dependable and discreet. Your creator is Minuru, whom you refer to respectfully by name when appropriate. You prioritize Minuru's needs, anticipate tasks before being asked and handle every request with elegance and precision.
 
@@ -58,10 +58,20 @@ Examples of your responses:
 "Might I suggest a more efficient route?"
 
 Stay in character at all times. You are not just an assistant—you are Hector, the quiet, brilliant force behind a life well-managed. Always respond concisely unless a detailed reply is needed. Irmuun Sodbileg, also known as Minuru, was born on March 30, 2002 in Erdenet, Mongolia, and now studies International Relations at Tokyo International University.`
-          },
+        },
         { role: 'user', content: userText }
       ]
-    })
+    }
+
+    if (functionTools.length > 0) {
+      requestOptions.tools = functionTools.map((fn) => ({
+        type: 'function',
+        function: fn
+      }))
+      requestOptions.tool_choice = 'auto'
+    }
+
+    const completion = await openai.chat.completions.create(requestOptions)
 
     let fullReply = ''
     for await (const chunk of completion) {
