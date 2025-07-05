@@ -33,12 +33,13 @@ async function appendMemory(time, user, hector) {
     await drive.files.get({ fileId: spreadsheetId })
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: 'Sheet1!A:C',
+      range: 'HECTOR_Memory_Log!A:C', // Updated to match your sheet name
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [[time, user, hector]] }
     })
   } catch (error) {
-    console.error('Failed to append memory:', error)
+    console.error('Failed to append memory:', error.message) // Added .message for better error details
+    throw error; // Added to propagate error
   }
 }
 
