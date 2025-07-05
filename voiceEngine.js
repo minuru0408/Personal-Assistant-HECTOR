@@ -9,6 +9,7 @@ require('dotenv').config();
 
 // Track if a recording is currently happening to avoid overlaps
 let isRecording = false;
+let isTranscribing = false;
 
 function levenshtein(a, b) {
   const matrix = Array.from({ length: b.length + 1 }, () => []);
@@ -106,33 +107,62 @@ async function startVoiceEngine() {
 
     isRecording = true;
 
-    await new Promise((resolve) => {
-      console.log('[voiceEngine] \ud83c\udf99\ufe0f recording from default device at 16kHz mono');
-      const recorder = record.record({
-        sampleRate: 16000,
-        channels: 1,
-        audioType: 'wav',
-        recordProgram: 'sox',
-        threshold: 0,
-        verbose: true,
-        recorder: 'sox',
-        device: RECORD_DEVICE,
-        silence: '1.0'
+    try {
+      await new Promise((resolve, reject) => {
+        console.log('[voiceEngine] \ud83c\udf99\ufe0f recording from default device at 16kHz mono');
+        const recorder = record.record({
+          sampleRate: 16000,
+          channels: 1,
+          audioType: 'wav',
+          recordProgram: 'sox',
+          threshold: 0,
+          verbose: true,
+          recorder: 'sox',
+          device: RECORD_DEVICE,
+          silence: '1.0'
+        });
+        const audioStream = recorder.stream();
+        audioStream.on('data', chunk => {
+          console.log('[voiceEngine] \ud83d\udd0a got audio chunk, length =', chunk.length);
+        });
+        const file = fs.createWriteStream(temp, { encoding: 'binary' });
+        audioStream.pipe(file);
+        file.on('finish', resolve);
+        audioStream.on('error', err => {
+          recorder.stop();
+          reject(err);
+        });
+        file.on('error', err => {
+          recorder.stop();
+          reject(err);
+        });
+        setTimeout(() => {
+          try {
+            recorder.stop();
+          } catch (e) {
+            console.error('[voiceEngine] recorder stop error:', e);
+          }
+        }, 6000);
       });
-      const audioStream = recorder.stream();
-      audioStream.on('data', chunk => {
-        console.log('[voiceEngine] \ud83d\udd0a got audio chunk, length =', chunk.length);
-      });
-      const file = fs.createWriteStream(temp, { encoding: 'binary' });
-      audioStream.pipe(file);
-      audioStream.on('end', resolve);
-      setTimeout(() => recorder.stop(), 6000);
-    });
+    } catch (err) {
+      console.error('[voiceEngine] recording error:', err);
+      isRecording = false;
+      continue;
+    }
 
-    const hasVoice = filterNoise(temp, filtered);
+    let hasVoice = false;
+    try {
+      hasVoice = filterNoise(temp, filtered);
+    } catch (err) {
+      console.error('[voiceEngine] file processing error:', err);
+      isRecording = false;
+      isTranscribing = false;
+      continue;
+    }
     if (!hasVoice) {
       console.log('[voiceEngine] \u26a0\ufe0f detected only noise, skipping');
       isRecording = false;
+      isTranscribing = false;
       continue;
     }
 
@@ -140,9 +170,18 @@ async function startVoiceEngine() {
       console.log('[voiceEngine] \ud83c\udf99\ufe0f starting transcription\u2026');
     }
 
-    let text = await transcribe(filtered);
+    let text = '';
+    try {
+      text = await transcribe(filtered);
+    } catch (err) {
+      console.error('[voiceEngine] transcription error:', err);
+      isRecording = false;
+      isTranscribing = false;
+      continue;
+    }
     // Recording finished, allow next recording
     isRecording = false;
+    isTranscribing = false;
     let cleaned = text.replace(/[^a-zA-Z0-9 ]/g, '').trim();
     let wordCount = text.trim().split(/\s+/).filter(Boolean).length;
     if (!cleaned || cleaned.length < 2) {
@@ -155,6 +194,11 @@ async function startVoiceEngine() {
 
     if (waiting) {
       if (contains(text, WAKE_WORDS)) {
+        if (isTranscribing) {
+          console.log('[voiceEngine] \u26d4\ufe0f wake-word ignored, already transcribing');
+          continue;
+        }
+        isTranscribing = true;
         const keyword = WAKE_WORDS.find(w => text.toLowerCase().includes(w));
         console.log('[voiceEngine] \ud83d\udd11 wake-word detected \u2192', keyword);
         waiting = false;
