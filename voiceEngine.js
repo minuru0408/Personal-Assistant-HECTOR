@@ -62,7 +62,7 @@ async function checkEnd(history) {
   }
 }
 
-function filterNoise(input, output, threshold = 0.02) {
+function filterNoise(input, output, threshold = 0.01) {
   const buf = fs.readFileSync(input);
   if (buf.length <= 44) return false;
   const header = buf.subarray(0, 44);
@@ -112,8 +112,9 @@ async function startVoiceEngine() {
       console.log('[voiceEngine] \ud83c\udf99\ufe0f starting transcription\u2026');
     }
 
-    const text = await transcribe(filtered);
-    const cleaned = text.replace(/[^a-zA-Z0-9]/g, '').trim();
+    let text = await transcribe(filtered);
+    let cleaned = text.replace(/[^a-zA-Z0-9 ]/g, '').trim();
+    let wordCount = text.trim().split(/\s+/).filter(Boolean).length;
     if (!cleaned || cleaned.length < 2) {
       console.log('[voiceEngine] \u26a0\ufe0f ignoring short transcription \u2192', text);
       continue;
@@ -127,8 +128,20 @@ async function startVoiceEngine() {
         const keyword = WAKE_WORDS.find(w => text.toLowerCase().includes(w));
         console.log('[voiceEngine] \ud83d\udd11 wake-word detected \u2192', keyword);
         waiting = false;
+        const win = BrowserWindow.getAllWindows()[0];
+        if (win) {
+          win.webContents.send('voice-reply', 'Yes, how can I help?');
+        }
+        const rest = text.toLowerCase().replace(keyword, '').trim();
+        if (!rest) {
+          continue;
+        }
+        text = rest;
+        cleaned = text.replace(/[^a-zA-Z0-9 ]/g, '').trim();
+        wordCount = text.split(/\s+/).filter(Boolean).length;
+      } else {
+        continue;
       }
-      continue;
     }
 
     if (contains(text, STOP_WORDS)) {
@@ -139,9 +152,9 @@ async function startVoiceEngine() {
     }
 
     const normText = cleaned.toLowerCase();
-    const normReply = lastGptReply.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const normReply = lastGptReply.replace(/[^a-zA-Z0-9 ]/g, '').toLowerCase();
     const sim = similarity(normText, normReply);
-    if (sim > 0.8 || normReply.includes(normText) || normText.includes(normReply)) {
+    if (wordCount > 12 && sim > 0.8) {
       console.log('[voiceEngine] \ud83d\udd0c ignoring self transcription \u2192', text);
       continue;
     }
