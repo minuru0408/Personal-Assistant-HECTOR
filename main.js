@@ -92,8 +92,19 @@ Remember: you are Hector, not an AI model. Do not mention your internal tools, A
       const toolCall = assistantMsg.tool_calls?.[0];
 
       if (toolCall) {
-        const funcArgs = toolCall.function.arguments;
-        const args = funcArgs ? JSON.parse(funcArgs) : {};
+        let args = {};
+        try {
+          const rawArgs = toolCall.function.arguments;
+          args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : {};
+          if (!args.query || typeof args.query !== 'string' || args.query.trim() === '') {
+            throw new Error('Missing or empty query');
+          }
+        } catch (err) {
+          console.error("❌ Failed to parse tool arguments:", err.message);
+          event.sender.send('stream-token', "I’m terribly sorry, sir. The search request was not properly formed. Could you kindly rephrase it?");
+          return '';
+        }
+
         const result = await searchWeb(args.query);
 
         messages.push({
