@@ -17,7 +17,7 @@ async function searchWeb(query) {
       params: {
         key: GOOGLE_API_KEY,
         cx: GOOGLE_CSE_ID,
-        q: encodeURIComponent(query.trim()),
+        q: query.trim(),
         num: 3
       }
     });
