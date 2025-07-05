@@ -3,6 +3,8 @@ const {
     onStreamToken,
     onStreamError,
     onCancelTts,
+    onVoiceText,
+    onVoiceReply,
     elevenLabsApiKey,
     elevenLabsVoiceId
 } = window.electronAPI
@@ -125,6 +127,24 @@ onStreamError((msg) => {
 
 onCancelTts(() => {
     stopCurrentAudio()
+})
+
+onVoiceText((text) => {
+    const userMessage = document.createElement('div')
+    userMessage.className = 'message user'
+    userMessage.textContent = text
+    chatWindow.appendChild(userMessage)
+
+    currentAiMessage = document.createElement('div')
+    currentAiMessage.className = 'message assistant'
+    chatWindow.appendChild(currentAiMessage)
+    chatWindow.scrollTop = chatWindow.scrollHeight
+})
+
+onVoiceReply((reply) => {
+    if (currentAiMessage) {
+        currentAiMessage.textContent = reply
+    }
 })
 
 document.querySelector('.chat-input-bar').addEventListener('submit', async (e) => {

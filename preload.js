@@ -5,6 +5,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onStreamToken: (cb) => ipcRenderer.on('stream-token', (event, token) => cb(token)),
   onStreamError: (cb) => ipcRenderer.on('stream-error', (event, msg) => cb(msg)),
   onCancelTts: (cb) => ipcRenderer.on('cancel-tts', () => cb()),
+  onVoiceText: (cb) => ipcRenderer.on('voice-text', (event, text) => cb(text)),
+  onVoiceReply: (cb) => ipcRenderer.on('voice-reply', (event, reply) => cb(reply)),
   elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
   elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID
 });
