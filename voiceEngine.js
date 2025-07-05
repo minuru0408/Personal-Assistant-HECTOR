@@ -7,6 +7,9 @@ const { appendMemory } = require('./memory');
 const { chatWithGPT } = require('./chat');
 require('dotenv').config();
 
+// Track if a recording is currently happening to avoid overlaps
+let isRecording = false;
+
 function levenshtein(a, b) {
   const matrix = Array.from({ length: b.length + 1 }, () => []);
   for (let i = 0; i <= b.length; i++) matrix[i][0] = i;
@@ -95,6 +98,13 @@ async function startVoiceEngine() {
   let lastGptReply = '';
   const history = [];
   while (true) {
+    if (isRecording) {
+      // Skip if a previous recording hasn't finished yet
+      await new Promise(r => setTimeout(r, 100));
+      continue;
+    }
+
+    isRecording = true;
 
     await new Promise((resolve) => {
       console.log('[voiceEngine] \ud83c\udf99\ufe0f recording from default device at 16kHz mono');
@@ -122,6 +132,7 @@ async function startVoiceEngine() {
     const hasVoice = filterNoise(temp, filtered);
     if (!hasVoice) {
       console.log('[voiceEngine] \u26a0\ufe0f detected only noise, skipping');
+      isRecording = false;
       continue;
     }
 
@@ -130,6 +141,8 @@ async function startVoiceEngine() {
     }
 
     let text = await transcribe(filtered);
+    // Recording finished, allow next recording
+    isRecording = false;
     let cleaned = text.replace(/[^a-zA-Z0-9 ]/g, '').trim();
     let wordCount = text.trim().split(/\s+/).filter(Boolean).length;
     if (!cleaned || cleaned.length < 2) {
