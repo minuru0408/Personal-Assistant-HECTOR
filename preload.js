@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onCancelTts: (cb) => ipcRenderer.on('cancel-tts', () => cb()),
   onVoiceText: (cb) => ipcRenderer.on('voice-text', (event, text) => cb(text)),
   onVoiceReply: (cb) => ipcRenderer.on('voice-reply', (event, reply) => cb(reply)),
+  toggleConversation: (enabled) => ipcRenderer.send('toggle-conversation', enabled),
+  onConversationMode: (cb) => ipcRenderer.on('conversation-mode', (event, mode) => cb(mode)),
   elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
   elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID
 });
