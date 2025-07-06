@@ -1,4 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { exec } = require('child_process');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   sendMessage: (text) => ipcRenderer.invoke('send-message', text),
@@ -12,5 +16,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onClearChat: (cb) => ipcRenderer.on('clear-chat', () => cb()),
   clearChat: () => ipcRenderer.send('clear-chat'),
   elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
-  elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID
+  elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID,
+  getTime: () => new Date().toString(),
+  getUser: () => os.userInfo().username,
+  listDir: (p) => {
+    const dir = p.startsWith('~') ? path.join(os.homedir(), p.slice(1)) : p;
+    return fs.readdirSync(dir);
+  },
+  readFile: (p) => {
+    const file = p.startsWith('~') ? path.join(os.homedir(), p.slice(1)) : p;
+    return fs.readFileSync(file, 'utf8');
+  },
+  writeFile: (p, content) => {
+    const file = p.startsWith('~') ? path.join(os.homedir(), p.slice(1)) : p;
+    fs.writeFileSync(file, content, 'utf8');
+    return true;
+  },
+  run: (cmd) =>
+    new Promise((resolve) =>
+      exec(cmd, (error, stdout, stderr) => {
+        if (error) resolve(stderr);
+        else resolve(stdout);
+      })
+    )
 });
