@@ -63,6 +63,16 @@ function contains(text, list) {
   return list.some(w => text.toLowerCase().includes(w));
 }
 
+function isClearCommand(text) {
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() === 'hector delete the chats'
+  );
+}
+
 async function transcribe(file) {
   const res = await openai.audio.transcriptions.create({
     file: fs.createReadStream(file),
@@ -251,6 +261,14 @@ async function startVoiceEngine() {
 
     if (contains(text, STOP_WORDS)) {
       BrowserWindow.getAllWindows()[0]?.webContents.send('cancel-tts');
+      waiting = true;
+      history.length = 0;
+      continue;
+    }
+
+    if (isClearCommand(text)) {
+      console.log('[hector] \ud83e\udd9a cleared chat history');
+      BrowserWindow.getAllWindows().forEach(win => win.webContents.send('clear-chat'));
       waiting = true;
       history.length = 0;
       continue;

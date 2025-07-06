@@ -7,6 +7,8 @@ const {
     onVoiceReply,
     toggleConversation,
     onConversationMode,
+    onClearChat,
+    clearChat,
     elevenLabsApiKey,
     elevenLabsVoiceId
 } = window.electronAPI
@@ -112,6 +114,23 @@ function queueToken(token) {
 const chatWindow = document.querySelector('.chat-window')
 let currentAiMessage = null
 
+function clearChatWindow() {
+    chatWindow.innerHTML = ''
+    currentAiMessage = null
+}
+
+onClearChat(() => {
+    clearChatWindow()
+})
+
+function isClearCommand(text) {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim() === 'hector delete the chats'
+}
+
 onStreamToken((token) => {
     if (currentAiMessage) {
         currentAiMessage.textContent += token
@@ -174,6 +193,13 @@ document.querySelector('.chat-input-bar').addEventListener('submit', async (e) =
     if (!userText) return
 
     input.value = ''
+
+    if (isClearCommand(userText)) {
+        console.log('[hector] \ud83e\udd9a cleared chat history')
+        clearChat()
+        clearChatWindow()
+        return
+    }
 
     const userMessage = document.createElement('div')
     userMessage.className = 'message user'
