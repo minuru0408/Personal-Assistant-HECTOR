@@ -11,13 +11,14 @@ const {
     clearChat,
     elevenLabsApiKey,
     elevenLabsVoiceId,
-    getTime,
     getUser,
     listDir,
     readFile,
     writeFile,
     run
 } = window.electronAPI
+
+const { getTime } = window.systemAPI
 
 let audioQueue = Promise.resolve()
 let currentAudio = null
@@ -166,8 +167,14 @@ function addAssistantMessage(text) {
 async function handleLocalCommand(text) {
     const lower = text.toLowerCase().trim()
     if (lower === 'what time is it') {
-        const time = await getTime()
+        console.log('[hector] answering from local APIs: time request')
+        const time = getTime()
         addAssistantMessage(time)
+        return true
+    }
+    if (lower === 'where am i') {
+        console.log('[hector] answering from local APIs: location request')
+        addAssistantMessage('Location access not enabled')
         return true
     }
     if (lower.includes('list') && lower.includes('desktop')) {
