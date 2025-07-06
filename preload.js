@@ -40,3 +40,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       })
     )
 });
+
+contextBridge.exposeInMainWorld('systemAPI', {
+  getTime: () => new Date().toString()
+});
+
