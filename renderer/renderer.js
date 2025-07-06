@@ -10,7 +10,13 @@ const {
     onClearChat,
     clearChat,
     elevenLabsApiKey,
-    elevenLabsVoiceId
+    elevenLabsVoiceId,
+    getTime,
+    getUser,
+    listDir,
+    readFile,
+    writeFile,
+    run
 } = window.electronAPI
 
 let audioQueue = Promise.resolve()
@@ -149,6 +155,33 @@ function isClearCommand(text) {
     return phrases.some(p => normalized === p || normalized === `hector ${p}`)
 }
 
+function addAssistantMessage(text) {
+    const aiMessage = document.createElement('div')
+    aiMessage.className = 'message assistant'
+    aiMessage.textContent = text
+    chatWindow.appendChild(aiMessage)
+    chatWindow.scrollTop = chatWindow.scrollHeight
+}
+
+async function handleLocalCommand(text) {
+    const lower = text.toLowerCase().trim()
+    if (lower === 'what time is it') {
+        const time = await getTime()
+        addAssistantMessage(time)
+        return true
+    }
+    if (lower.includes('list') && lower.includes('desktop')) {
+        try {
+            const files = await listDir('~/Desktop')
+            addAssistantMessage(files.join('\n'))
+        } catch {
+            addAssistantMessage('Could not list desktop files')
+        }
+        return true
+    }
+    return false
+}
+
 onStreamToken((token) => {
     if (currentAiMessage) {
         currentAiMessage.textContent += token
@@ -228,6 +261,10 @@ document.querySelector('.chat-input-bar').addEventListener('submit', async (e) =
     currentAiMessage.className = 'message assistant'
     chatWindow.appendChild(currentAiMessage)
     chatWindow.scrollTop = chatWindow.scrollHeight
+
+    if (await handleLocalCommand(userText)) {
+        return
+    }
 
     try {
         await sendMessage(userText)
