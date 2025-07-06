@@ -48,6 +48,11 @@ ipcMain.on('toggle-conversation', (event, enabled) => {
   BrowserWindow.getAllWindows().forEach(win => win.webContents.send('conversation-mode', enabled));
 });
 
+ipcMain.on('clear-chat', () => {
+  console.log('[hector] \ud83e\udd9a cleared chat history');
+  BrowserWindow.getAllWindows().forEach(win => win.webContents.send('clear-chat'));
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
