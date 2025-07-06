@@ -12,4 +12,5 @@ request is sent without them. Web search requires `GOOGLE_API_KEY` and
 1. Copy `.env.example` to `.env`.
 2. Replace the example values in `.env` with your own keys. Set `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` for speech, and `GOOGLE_API_KEY` with `GOOGLE_CSE_ID` for web search.
 3. Install dependencies with `npm install`.
-4. Start the app with `npm start`.
+4. Make sure the `wav` package is installed; it encodes the microphone input as a proper WAV file.
+5. Start the app with `npm start`.
