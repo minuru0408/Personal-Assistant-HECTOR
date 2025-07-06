@@ -2,7 +2,7 @@ require('dotenv').config();
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { chatWithGPT } = require('./chat');
-const { startVoiceEngine } = require('./voiceEngine');
+const { startVoiceEngine, setConversationMode } = require('./voiceEngine');
 
 function checkEnv() {
   const required = [
@@ -43,6 +43,11 @@ ipcMain.handle('send-message', async (event, userText) => {
   }
 });
 
+ipcMain.on('toggle-conversation', (event, enabled) => {
+  setConversationMode(enabled);
+  BrowserWindow.getAllWindows().forEach(win => win.webContents.send('conversation-mode', enabled));
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
@@ -55,6 +60,9 @@ function createWindow() {
   });
 
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  win.webContents.on('did-finish-load', () => {
+    win.webContents.send('conversation-mode', true);
+  });
 }
 
 app.whenReady().then(() => {
