@@ -36,6 +36,14 @@ function similarity(a, b) {
   return maxLen === 0 ? 1 : 1 - distance / maxLen;
 }
 
+function normalizeText(str) {
+  return str
+    .toLowerCase()
+    .replace(/[\p{P}\p{S}]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 const WAKE_WORDS = ['hey hector', 'hector', 'hey buddy'];
 const STOP_WORDS = ['hey stop', 'stop'];
 const RECORD_DEVICE = 'default';
@@ -235,11 +243,11 @@ async function startVoiceEngine() {
       continue;
     }
 
-    const normText = text.trim().toLowerCase();
-    const normReply = lastGptReply.trim().toLowerCase();
+    const normText = normalizeText(text);
+    const normReply = normalizeText(lastGptReply);
     const sim = similarity(normText, normReply);
-    if (wordCount > 6 && sim > 0.9) {
-      console.log('[voiceEngine] \ud83d\udd01 ignoring self transcription \u2192', text);
+    if (sim >= 0.9) {
+      console.log(`[voiceEngine] \ud83d\udd01 ignoring self transcription \u2192 ${text}`);
       continue;
     }
 
