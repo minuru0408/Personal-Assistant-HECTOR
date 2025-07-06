@@ -64,13 +64,13 @@ function contains(text, list) {
 }
 
 function isClearCommand(text) {
-  return (
-    text
-      .toLowerCase()
-      .replace(/[^a-z]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim() === 'hector delete the chats'
-  );
+  const normalized = text
+    .toLowerCase()
+    .replace(/[^a-z]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const phrases = ['delete chat', 'clear conversation', 'clear the chat'];
+  return phrases.some(p => normalized === p || normalized === `hector ${p}`);
 }
 
 async function transcribe(file) {
@@ -267,7 +267,7 @@ async function startVoiceEngine() {
     }
 
     if (isClearCommand(text)) {
-      console.log('[hector] \ud83e\udd9a cleared chat history');
+      console.log('[hector] \ud83e\udd9a clearing chat');
       BrowserWindow.getAllWindows().forEach(win => win.webContents.send('clear-chat'));
       waiting = true;
       history.length = 0;
