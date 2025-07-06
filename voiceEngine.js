@@ -115,10 +115,9 @@ async function startVoiceEngine() {
           sampleRate: 16000,
           channels: 1,
           audioType: 'wav',
-          recordProgram: 'sox',
+          recordProgram: 'rec',
           threshold: 0,
           verbose: true,
-          recorder: 'sox',
           device: RECORD_DEVICE,
           silence: '1.0'
         });
