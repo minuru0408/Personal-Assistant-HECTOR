@@ -124,11 +124,13 @@ onClearChat(() => {
 })
 
 function isClearCommand(text) {
-    return text
+    const normalized = text
         .toLowerCase()
         .replace(/[^a-z]/g, ' ')
         .replace(/\s+/g, ' ')
-        .trim() === 'hector delete the chats'
+        .trim()
+    const phrases = ['delete chat', 'clear conversation', 'clear the chat']
+    return phrases.some(p => normalized === p || normalized === `hector ${p}`)
 }
 
 onStreamToken((token) => {
@@ -195,9 +197,8 @@ document.querySelector('.chat-input-bar').addEventListener('submit', async (e) =
     input.value = ''
 
     if (isClearCommand(userText)) {
-        console.log('[hector] \ud83e\udd9a cleared chat history')
+        console.log('[hector] \ud83e\udd9a clearing chat')
         clearChat()
-        clearChatWindow()
         return
     }
 
