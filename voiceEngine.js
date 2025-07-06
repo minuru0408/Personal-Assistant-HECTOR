@@ -133,7 +133,16 @@ async function startVoiceEngine() {
           bitDepth: 16
         });
         audioStream.pipe(encoder).pipe(file);
-        file.on('finish', resolve);
+        // Wait for the write stream to fully flush and close
+        file.on('finish', () => {
+          file.close(err => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+        });
         audioStream.on('error', err => {
           recorder.stop();
           reject(err);
