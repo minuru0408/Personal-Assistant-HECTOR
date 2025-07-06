@@ -5,6 +5,8 @@ const {
     onCancelTts,
     onVoiceText,
     onVoiceReply,
+    toggleConversation,
+    onConversationMode,
     elevenLabsApiKey,
     elevenLabsVoiceId
 } = window.electronAPI
@@ -145,6 +147,23 @@ onVoiceReply((reply) => {
     if (currentAiMessage) {
         currentAiMessage.textContent = reply
     }
+})
+
+const statusEl = document.querySelector('.status')
+const toggleBtn = document.getElementById('conversation-toggle')
+let conversationEnabled = true
+
+toggleBtn.addEventListener('click', () => {
+    conversationEnabled = !conversationEnabled
+    toggleConversation(conversationEnabled)
+    toggleBtn.textContent = conversationEnabled ? 'Pause' : 'Resume'
+    statusEl.textContent = conversationEnabled ? 'Listening' : 'Standby'
+})
+
+onConversationMode((mode) => {
+    conversationEnabled = mode
+    toggleBtn.textContent = mode ? 'Pause' : 'Resume'
+    statusEl.textContent = mode ? 'Listening' : 'Standby'
 })
 
 document.querySelector('.chat-input-bar').addEventListener('submit', async (e) => {
