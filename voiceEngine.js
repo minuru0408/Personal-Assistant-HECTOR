@@ -150,17 +150,12 @@ async function startVoiceEngine() {
       continue;
     }
 
-    let hasVoice = false;
+    let hasVoice = true;
     try {
-      hasVoice = filterNoise(temp, filtered);
+      // Temporarily bypass noise filtering for debugging
+      fs.copyFileSync(temp, filtered);
     } catch (err) {
       console.error('[voiceEngine] file processing error:', err);
-      isRecording = false;
-      isTranscribing = false;
-      continue;
-    }
-    if (!hasVoice) {
-      console.log('[voiceEngine] \u26a0\ufe0f detected only noise, skipping');
       isRecording = false;
       isTranscribing = false;
       continue;
