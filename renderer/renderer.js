@@ -21,6 +21,7 @@ let pendingText = ''
 let processing = false
 let lastRequestTime = 0
 const REQUEST_INTERVAL = 1000 // 1 second
+let buffered = ''
 
 function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -70,8 +71,9 @@ async function processQueue() {
     processing = true
     const wait = Math.max(REQUEST_INTERVAL - (Date.now() - lastRequestTime), 0)
     await delay(wait)
-    const text = pendingText
+    const text = pendingText.trim()
     pendingText = ''
+    console.log('[voiceEngine] \ud83d\uddE3\ufe0f speaking buffered:', text)
     try {
         const buf = await fetchWithRetry(text)
         if (!buf) return
@@ -103,12 +105,26 @@ function stopCurrentAudio() {
         currentAudio = null
         audioQueue = Promise.resolve()
         pendingText = ''
+        buffered = ''
+    }
+}
+
+function flushBuffer() {
+    if (buffered.trim()) {
+        pendingText += buffered
+        buffered = ''
+        processQueue()
     }
 }
 
 function queueToken(token) {
-    pendingText += token
-    processQueue()
+    buffered += token
+    const words = buffered.trim().split(/\s+/).filter(Boolean)
+    if (words.length >= 3) {
+        pendingText += buffered
+        buffered = ''
+        processQueue()
+    }
 }
 
 const chatWindow = document.querySelector('.chat-window')
@@ -168,6 +184,7 @@ onVoiceReply((reply) => {
     if (currentAiMessage) {
         currentAiMessage.textContent = reply
     }
+    flushBuffer()
 })
 
 const statusEl = document.querySelector('.status')
@@ -214,6 +231,7 @@ document.querySelector('.chat-input-bar').addEventListener('submit', async (e) =
 
     try {
         await sendMessage(userText)
+        flushBuffer()
     } catch (error) {
         console.error('Failed to get AI response:', error)
         if (currentAiMessage) {
