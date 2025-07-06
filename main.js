@@ -49,7 +49,7 @@ ipcMain.on('toggle-conversation', (event, enabled) => {
 });
 
 ipcMain.on('clear-chat', () => {
-  console.log('[hector] \ud83e\udd9a cleared chat history');
+  console.log('[hector] \ud83e\udd9a clearing chat');
   BrowserWindow.getAllWindows().forEach(win => win.webContents.send('clear-chat'));
 });
 
