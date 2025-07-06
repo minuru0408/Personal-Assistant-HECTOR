@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const record = require('node-record-lpcm16');
+const wav = require('wav');
 const OpenAI = require('openai');
 const { BrowserWindow } = require('electron');
 const { appendMemory } = require('./memory');
@@ -125,8 +126,13 @@ async function startVoiceEngine() {
         audioStream.on('data', chunk => {
           console.log('[voiceEngine] \ud83d\udd0a got audio chunk, length =', chunk.length);
         });
-        const file = fs.createWriteStream(temp, { encoding: 'binary' });
-        audioStream.pipe(file);
+        const file = fs.createWriteStream(temp);
+        const encoder = new wav.Writer({
+          sampleRate: 16000,
+          channels: 1,
+          bitDepth: 16
+        });
+        audioStream.pipe(encoder).pipe(file);
         file.on('finish', resolve);
         audioStream.on('error', err => {
           recorder.stop();
@@ -139,6 +145,7 @@ async function startVoiceEngine() {
         setTimeout(() => {
           try {
             recorder.stop();
+            encoder.end();
           } catch (e) {
             console.error('[voiceEngine] recorder stop error:', e);
           }
