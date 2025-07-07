@@ -32,6 +32,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     fs.writeFileSync(file, content, 'utf8');
     return true;
   },
+  // Request recent emails through the main process
+  // Expose the same helper on systemAPI
   getRecentEmails: (count) => ipcRenderer.invoke('get-recent-emails', count),
   run: (cmd) =>
     new Promise((resolve) =>
