@@ -73,7 +73,7 @@ async function getGmail() {
 
 async function getRecentEmails(count) {
   const gmail = await getGmail();
-  const res = await gmail.users.messages.list({ userId: 'me', q: 'is:unread', maxResults: count });
+  const res = await gmail.users.messages.list({ userId: 'me', labelIds: ['INBOX'], maxResults: count });
   const msgs = res.data.messages || [];
   const emails = [];
   for (const m of msgs) {
