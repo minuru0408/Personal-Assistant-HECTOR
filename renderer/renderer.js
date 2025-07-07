@@ -194,24 +194,31 @@ async function handleLocalCommand(text) {
 }
 
 onStreamToken((token) => {
-    if (!emailToolRequested && token.includes('getRecentEmails')) {
-        emailToolRequested = true
-        ;(async () => {
+    if (!emailToolRequested && token.includes('[TOOL:getRecentEmails]')) {
+        emailToolRequested = true;
+        (async () => {
             try {
                 const emails = await getRecentEmails(3)
-                console.log('[hector] \ud83d\udcec fetched emails from bridge')
+                console.log('[hector] 📬 fetched emails from bridge')
+                if (currentAiMessage) {
+                    currentAiMessage.textContent = '📬 Here are your recent emails:\n\n'
+                }
                 for (const mail of emails) {
-                    const text = `Here's a recent email:\nSubject: ${mail.subject}\nFrom: ${mail.sender}\n${mail.snippet}`
-                    addAssistantMessage(text)
+                    const text = `Subject: ${mail.subject}\nFrom: ${mail.sender}\n${mail.snippet}\n\n`
+                    if (currentAiMessage) {
+                        currentAiMessage.textContent += text
+                    }
                 }
             } catch (err) {
-                addAssistantMessage('Sorry, I could not fetch your recent emails.')
+                if (currentAiMessage) {
+                    currentAiMessage.textContent += 'Sorry, I could not fetch your recent emails.'
+                }
             } finally {
                 emailToolRequested = false
             }
         })()
     }
-    if (currentAiMessage) {
+    if (currentAiMessage && !token.includes('[TOOL:')) {
         currentAiMessage.textContent += token
         queueToken(token)
         chatWindow.scrollTop = chatWindow.scrollHeight
