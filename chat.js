@@ -69,6 +69,21 @@ const getRecentEmailsTool = {
   }
 };
 
+const getCalendarEventsTool = {
+  type: 'function',
+  function: {
+    name: 'get_calendar_events',
+    description: 'Fetch upcoming events from the user\'s Google Calendar',
+    parameters: {
+      type: 'object',
+      properties: {
+        count: { type: 'integer', description: 'Number of events to fetch (default is 3)' }
+      },
+      required: ['count']
+    }
+  }
+};
+
 const sendEmailTool = {
   type: 'function',
   function: {
@@ -182,7 +197,15 @@ async function chatWithGPT(userText, onToken) {
   const firstRes = await openai.chat.completions.create({
     model: 'gpt-4',
     messages,
-    tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool, getRecentEmailsTool, sendEmailTool]
+    tools: [
+      searchWebTool,
+      getTimeTool,
+      getDateTool,
+      calculateExpressionTool,
+      getRecentEmailsTool,
+      sendEmailTool,
+      getCalendarEventsTool
+    ]
   });
 
   const assistantMsg = firstRes.choices[0].message;
@@ -196,6 +219,8 @@ async function chatWithGPT(userText, onToken) {
     
     if (name === 'getRecentEmails' && onToken) {
       onToken('[TOOL:getRecentEmails]');
+    } else if (name === 'get_calendar_events' && onToken) {
+      onToken('[TOOL:get_calendar_events]');
     }
     
     let result = '';
@@ -249,6 +274,8 @@ async function chatWithGPT(userText, onToken) {
       result = calculateExpression(args.expression);
     } else if (name === 'getRecentEmails') {
       result = '[EMAILS]';
+    } else if (name === 'get_calendar_events') {
+      result = '[EVENTS]';
     } else if (name === 'send_email') {
       let args = {};
       try {
@@ -274,7 +301,15 @@ async function chatWithGPT(userText, onToken) {
         model: 'gpt-4',
         stream: true,
         messages,
-        tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool, getRecentEmailsTool, sendEmailTool]
+        tools: [
+          searchWebTool,
+          getTimeTool,
+          getDateTool,
+          calculateExpressionTool,
+          getRecentEmailsTool,
+          sendEmailTool,
+          getCalendarEventsTool
+        ]
       });
 
       for await (const chunk of finalRes) {

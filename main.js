@@ -8,6 +8,10 @@ const {
   sendEmail,
   analyzeInbox,
 } = require('./gmail');
+const {
+  getUpcomingEvents,
+  createEvent,
+} = require('./utils/calendar');
 
 function checkEnv() {
   const required = [
@@ -52,6 +56,16 @@ ipcMain.handle('get-recent-emails', async (_event, count) => {
   const num = Number.isInteger(count) ? count : parseInt(count, 10);
   const safeCount = Math.min(Math.max(num || 3, 1), 20);
   return getRecentEmails(safeCount);
+});
+
+ipcMain.handle('get-upcoming-events', async (_event, count) => {
+  const num = Number.isInteger(count) ? count : parseInt(count, 10);
+  const safeCount = Math.min(Math.max(num || 3, 1), 20);
+  return getUpcomingEvents(safeCount);
+});
+
+ipcMain.handle('create-event', async (_event, details) => {
+  return createEvent(details);
 });
 
 ipcMain.handle('send-email', async (_event, to, subject, body) => {
