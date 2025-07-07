@@ -29,7 +29,7 @@ async function authorize() {
   const oAuth2Client = new google.auth.OAuth2(
     client_id,
     client_secret,
-    redirect_uris[0]
+    'urn:ietf:wg:oauth:2.0:oob'
   );
 
   if (fs.existsSync(TOKEN_PATH)) {
