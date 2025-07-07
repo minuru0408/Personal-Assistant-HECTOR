@@ -19,6 +19,7 @@ const {
 } = window.electronAPI
 
 const { getTime } = window.systemAPI
+const { getRecentEmails } = window.electronAPI
 
 let audioQueue = Promise.resolve()
 let currentAudio = null
@@ -29,6 +30,7 @@ let processing = false
 let lastRequestTime = 0
 const REQUEST_INTERVAL = 1000 // 1 second
 let buffered = ''
+let emailToolRequested = false
 
 function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -192,6 +194,9 @@ async function handleLocalCommand(text) {
 }
 
 onStreamToken((token) => {
+    if (!emailToolRequested && token.includes('getRecentEmails')) {
+        emailToolRequested = true
+    }
     if (currentAiMessage) {
         currentAiMessage.textContent += token
         queueToken(token)
@@ -222,11 +227,23 @@ onVoiceText((text) => {
     chatWindow.scrollTop = chatWindow.scrollHeight
 })
 
-onVoiceReply((reply) => {
+onVoiceReply(async (reply) => {
     if (currentAiMessage) {
         currentAiMessage.textContent = reply
     }
     flushBuffer()
+    if (emailToolRequested) {
+        try {
+            const emails = await getRecentEmails(5)
+            for (const mail of emails) {
+                const text = `From: ${mail.sender}\nSubject: ${mail.subject}\nSnippet: ${mail.snippet}`
+                addAssistantMessage(text)
+            }
+        } catch (err) {
+            addAssistantMessage('Failed to fetch recent emails')
+        }
+        emailToolRequested = false
+    }
 })
 
 const statusEl = document.querySelector('.status')
