@@ -198,16 +198,20 @@ onStreamToken((token) => {
         emailToolRequested = true;
         (async () => {
             try {
-                const emails = await getRecentEmails(3)
+                const emails = await getRecentEmails(1)
                 console.log('[hector] 📬 fetched emails from bridge')
-                if (currentAiMessage) {
-                    currentAiMessage.textContent = '📬 Here are your recent emails:\n\n'
-                }
-                for (const mail of emails) {
-                    const text = `Subject: ${mail.subject}\nFrom: ${mail.sender}\n${mail.snippet}\n\n`
-                    if (currentAiMessage) {
-                        currentAiMessage.textContent += text
+                if (currentAiMessage && emails.length) {
+                    const mail = emails[0]
+                    const from = mail.sender.split('<')[0].trim()
+                    let summary = (mail.snippet || mail.subject || '').replace(/\s+/g, ' ').trim()
+                    if (summary) {
+                        summary = summary.split(/[.!?]/)[0]
+                        summary = summary.charAt(0).toLowerCase() + summary.slice(1)
                     }
+                    const text = `\ud83d\udce8 You\u2019ve received a message from ${from}. It looks like ${summary}. Would you like me to read it in full, sir?`
+                    currentAiMessage.textContent = text
+                } else if (currentAiMessage) {
+                    currentAiMessage.textContent += 'Sorry, I could not fetch your recent emails.'
                 }
             } catch (err) {
                 if (currentAiMessage) {
