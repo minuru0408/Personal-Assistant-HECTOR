@@ -35,6 +35,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Request recent emails through the main process
   // Expose the same helper on systemAPI
   getRecentEmails: (count) => ipcRenderer.invoke('get-recent-emails', count),
+  getUpcomingEvents: (count) => ipcRenderer.invoke('get-upcoming-events', count),
+  createEvent: (details) => ipcRenderer.invoke('create-event', details),
   run: (cmd) =>
     new Promise((resolve) =>
       exec(cmd, (error, stdout, stderr) => {
@@ -48,6 +50,8 @@ contextBridge.exposeInMainWorld('systemAPI', {
   getTime: () => new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
   getDate: () => new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
   getRecentEmails: (count) => ipcRenderer.invoke('get-recent-emails', count),
+  getUpcomingEvents: (count) => ipcRenderer.invoke('get-upcoming-events', count),
+  createEvent: (details) => ipcRenderer.invoke('create-event', details),
   sendEmail: (to, subject, body) =>
     ipcRenderer.invoke('send-email', to, subject, body),
   analyzeInbox: () => ipcRenderer.invoke('analyze-inbox'),
