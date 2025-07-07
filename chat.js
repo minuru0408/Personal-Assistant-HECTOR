@@ -19,6 +19,24 @@ const searchWebTool = {
     }
   }
 };
+const getTimeTool = {
+  type: "function",
+  function: {
+    name: "get_time",
+    description: "Get the current system time",
+    parameters: { type: "object", properties: {} }
+  }
+};
+
+const getDateTool = {
+  type: "function",
+  function: {
+    name: "get_date",
+    description: "Get the current system date",
+    parameters: { type: "object", properties: {} }
+  }
+};
+
 
 async function chatWithGPT(userText, onToken) {
   const messages = [
@@ -101,7 +119,7 @@ async function chatWithGPT(userText, onToken) {
   const firstRes = await openai.chat.completions.create({
     model: 'gpt-4',
     messages,
-    tools: [searchWebTool]
+    tools: [searchWebTool, getTimeTool, getDateTool]
   });
 
   const assistantMsg = firstRes.choices[0].message;
@@ -110,48 +128,58 @@ async function chatWithGPT(userText, onToken) {
   const toolCall = assistantMsg.tool_calls?.[0];
 
   if (toolCall) {
-    let args = {};
-    try {
-      const rawArgs = toolCall.function.arguments;
-      if (typeof rawArgs === 'string') {
-        args = JSON.parse(rawArgs);
-      } else if (typeof rawArgs === 'object' && rawArgs !== null) {
-        args = rawArgs;
-      } else {
-        throw new Error('Unexpected arguments format');
-      }
+    const name = toolCall.function.name;
+    let result = '';
+    if (name === 'search_web') {
+      let args = {};
+      try {
+        const rawArgs = toolCall.function.arguments;
+        if (typeof rawArgs === 'string') {
+          args = JSON.parse(rawArgs);
+        } else if (typeof rawArgs === 'object' && rawArgs !== null) {
+          args = rawArgs;
+        } else {
+          throw new Error('Unexpected arguments format');
+        }
 
-      if (!args.query || typeof args.query !== 'string' || args.query.trim() === '') {
-        console.warn('🛑 Tool call received with missing or empty query. GPT may be unsure how to handle this.');
-        if (onToken) onToken("I'm afraid the request was unclear, sir. Could you kindly clarify what you'd like me to find?");
+        if (!args.query || typeof args.query !== 'string' || args.query.trim() === '') {
+          console.warn('🛑 Tool call received with missing or empty query. GPT may be unsure how to handle this.');
+          if (onToken) onToken("I'm afraid the request was unclear, sir. Could you kindly clarify what you'd like me to find?");
+          return '';
+        }
+      } catch (err) {
+        console.error('❌ Failed to parse tool arguments:', err);
+        if (onToken) onToken("I’m terribly sorry, sir. It seems the query I received was incomplete or malformed. Might I kindly ask you to rephrase?");
         return '';
       }
-    } catch (err) {
-      console.error('❌ Failed to parse tool arguments:', err);
-      if (onToken) onToken("I’m terribly sorry, sir. It seems the query I received was incomplete or malformed. Might I kindly ask you to rephrase?");
-      return '';
+
+      result = await searchWeb(args.query);
+    } else if (name === 'get_time') {
+      result = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    } else if (name === 'get_date') {
+      result = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     }
 
-    const result = await searchWeb(args.query);
+    if (result) {
+      messages.push({
+        role: 'tool',
+        content: result,
+        tool_call_id: toolCall.id
+      });
 
-    messages.push({
-      role: 'tool',
-      content: result,
-      tool_call_id: toolCall.id
-    });
+      const finalRes = await openai.chat.completions.create({
+        model: 'gpt-4',
+        stream: true,
+        messages,
+        tools: [searchWebTool, getTimeTool, getDateTool]
+      });
 
-    const finalRes = await openai.chat.completions.create({
-      model: 'gpt-4',
-      stream: true,
-      messages,
-      tools: [searchWebTool]
-    });
-
-    for await (const chunk of finalRes) {
-      const token = chunk.choices[0]?.delta?.content;
-      if (token) {
-        fullReply += token;
-        if (onToken) onToken(token);
+      for await (const chunk of finalRes) {
+        const token = chunk.choices[0]?.delta?.content;
+        if (token) {
+          fullReply += token;
+          if (onToken) onToken(token);
+        }
       }
     }
   } else if (assistantMsg.content) {
