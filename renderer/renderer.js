@@ -200,11 +200,13 @@ onStreamToken((token) => {
             try {
                 const emails = await getRecentEmails(3)
                 for (const mail of emails) {
-                    const text = `\u2709\ufe0f *${mail.subject}*\nFrom: ${mail.sender}\n${mail.snippet}`
+                    const text = `Here's a recent email:\nSubject: ${mail.subject}\nFrom: ${mail.sender}\n${mail.snippet}`
                     addAssistantMessage(text)
                 }
             } catch (err) {
-                addAssistantMessage('Failed to fetch recent emails')
+                addAssistantMessage('Sorry, I could not fetch your recent emails.')
+            } finally {
+                emailToolRequested = false
             }
         })()
     }
