@@ -1,6 +1,7 @@
 const OpenAI = require('openai');
 const { appendMemory } = require('./memory');
 const { searchWeb } = require('./utils/searchWeb');
+const { calculateExpression } = require('./utils/calculateExpression');
 require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -37,6 +38,21 @@ const getDateTool = {
   }
 };
 
+const calculateExpressionTool = {
+  type: 'function',
+  function: {
+    name: 'calculate_expression',
+    description: 'Evaluate a math expression and return the result',
+    parameters: {
+      type: 'object',
+      properties: {
+        expression: { type: 'string', description: 'Math expression to evaluate' }
+      },
+      required: ['expression']
+    }
+  }
+};
+
 
 async function chatWithGPT(userText, onToken) {
   const messages = [
@@ -53,6 +69,10 @@ async function chatWithGPT(userText, onToken) {
       - Use getTime() for current time
       - Use getDate() for current date
       - NEVER use search_web for time/date queries
+
+    • ➗ Math:
+      - Use calculate_expression() for arithmetic
+      - NEVER guess results or use search_web for math
     
     • 💻 System Operations:
       - File operations: listDir(), readFile(), writeFile()
@@ -119,7 +139,7 @@ async function chatWithGPT(userText, onToken) {
   const firstRes = await openai.chat.completions.create({
     model: 'gpt-4',
     messages,
-    tools: [searchWebTool, getTimeTool, getDateTool]
+    tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool]
   });
 
   const assistantMsg = firstRes.choices[0].message;
@@ -158,6 +178,24 @@ async function chatWithGPT(userText, onToken) {
       result = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     } else if (name === 'get_date') {
       result = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } else if (name === 'calculate_expression') {
+      let args = {};
+      try {
+        const rawArgs = toolCall.function.arguments;
+        if (typeof rawArgs === 'string') {
+          args = JSON.parse(rawArgs);
+        } else if (typeof rawArgs === 'object' && rawArgs !== null) {
+          args = rawArgs;
+        } else {
+          throw new Error('Unexpected arguments format');
+        }
+      } catch (err) {
+        console.error('Failed to parse expression arguments:', err);
+        if (onToken) onToken("Pardon me, the expression seemed unclear. Could you rephrase it, sir?");
+        return '';
+      }
+
+      result = calculateExpression(args.expression);
     }
 
     if (result) {
@@ -171,7 +209,7 @@ async function chatWithGPT(userText, onToken) {
         model: 'gpt-4',
         stream: true,
         messages,
-        tools: [searchWebTool, getTimeTool, getDateTool]
+    tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool]
       });
 
       for await (const chunk of finalRes) {
