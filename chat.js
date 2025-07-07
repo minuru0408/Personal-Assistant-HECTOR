@@ -2,6 +2,7 @@ const OpenAI = require('openai');
 const { appendMemory } = require('./memory');
 const { searchWeb } = require('./utils/searchWeb');
 const { calculateExpression } = require('./utils/calculateExpression');
+const { sendEmail } = require('./gmail');
 require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -68,6 +69,22 @@ const getRecentEmailsTool = {
   }
 };
 
+const sendEmailTool = {
+  type: 'function',
+  function: {
+    name: 'send_email',
+    description: 'Send an email using Gmail API',
+    parameters: {
+      type: 'object',
+      properties: {
+        to: { type: 'string', description: 'Recipient email address' },
+        subject: { type: 'string', description: 'Subject line for the email' },
+        body: { type: 'string', description: 'Body content of the email' }
+      },
+      required: ['to', 'subject', 'body']
+    }
+  }
+};
 
 async function chatWithGPT(userText, onToken) {
   const messages = [
@@ -165,7 +182,7 @@ async function chatWithGPT(userText, onToken) {
   const firstRes = await openai.chat.completions.create({
     model: 'gpt-4',
     messages,
-    tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool, getRecentEmailsTool]
+    tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool, getRecentEmailsTool, sendEmailTool]
   });
 
   const assistantMsg = firstRes.choices[0].message;
@@ -232,6 +249,18 @@ async function chatWithGPT(userText, onToken) {
       result = calculateExpression(args.expression);
     } else if (name === 'getRecentEmails') {
       result = '[EMAILS]';
+    } else if (name === 'send_email') {
+      let args = {};
+      try {
+        const rawArgs = toolCall.function.arguments;
+        args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
+        console.log(`📧 Sending email to ${args.to}`);
+        await sendEmail(args.to, args.subject, args.body);
+        result = `Email sent to ${args.to}, sir.`;
+      } catch (err) {
+        console.error('❌ Failed to send email:', err);
+        result = `I'm terribly sorry, sir. I couldn't complete the email delivery.`;
+      }
     }
 
     if (result) {
@@ -245,7 +274,7 @@ async function chatWithGPT(userText, onToken) {
         model: 'gpt-4',
         stream: true,
         messages,
-        tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool, getRecentEmailsTool]
+        tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool, getRecentEmailsTool, sendEmailTool]
       });
 
       for await (const chunk of finalRes) {
