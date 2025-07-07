@@ -148,6 +148,7 @@ async function chatWithGPT(userText, onToken) {
   const toolCall = assistantMsg.tool_calls?.[0];
 
   if (toolCall) {
+    console.log(`🧰 Tool requested: ${toolCall.function.name}`);
     const name = toolCall.function.name;
     let result = '';
     if (name === 'search_web') {
@@ -189,6 +190,8 @@ async function chatWithGPT(userText, onToken) {
         } else {
           throw new Error('Unexpected arguments format');
         }
+
+        console.log(`🧮 Hector is calculating: "${args.expression}"`);
       } catch (err) {
         console.error('Failed to parse expression arguments:', err);
         if (onToken) onToken("Pardon me, the expression seemed unclear. Could you rephrase it, sir?");
