@@ -228,22 +228,22 @@ onVoiceText((text) => {
 })
 
 onVoiceReply(async (reply) => {
+    if (reply.startsWith('[EMAILS]')) {
+        try {
+            const emails = JSON.parse(reply.slice(8))
+            for (const mail of emails) {
+                const text = `\ud83d\udce8 *${mail.subject}*\nFrom: ${mail.sender}\n${mail.snippet}`
+                addAssistantMessage(text)
+            }
+        } catch (err) {
+            addAssistantMessage('Failed to display recent emails')
+        }
+        return
+    }
     if (currentAiMessage) {
         currentAiMessage.textContent = reply
     }
     flushBuffer()
-    if (emailToolRequested) {
-        try {
-            const emails = await getRecentEmails(5)
-            for (const mail of emails) {
-                const text = `From: ${mail.sender}\nSubject: ${mail.subject}\nSnippet: ${mail.snippet}`
-                addAssistantMessage(text)
-            }
-        } catch (err) {
-            addAssistantMessage('Failed to fetch recent emails')
-        }
-        emailToolRequested = false
-    }
 })
 
 const statusEl = document.querySelector('.status')
