@@ -3,6 +3,11 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { chatWithGPT } = require('./chat');
 const { startVoiceEngine, setConversationMode } = require('./voiceEngine');
+const {
+  getRecentEmails,
+  sendEmail,
+  analyzeInbox,
+} = require('./gmail');
 
 function checkEnv() {
   const required = [
@@ -41,6 +46,18 @@ ipcMain.handle('send-message', async (event, userText) => {
     event.sender.send('stream-error', 'Sorry, I encountered an error. Please try again.');
     return '';
   }
+});
+
+ipcMain.handle('get-recent-emails', async (_event, count) => {
+  return getRecentEmails(count);
+});
+
+ipcMain.handle('send-email', async (_event, to, subject, body) => {
+  return sendEmail(to, subject, body);
+});
+
+ipcMain.handle('analyze-inbox', async () => {
+  return analyzeInbox();
 });
 
 ipcMain.on('toggle-conversation', (event, enabled) => {

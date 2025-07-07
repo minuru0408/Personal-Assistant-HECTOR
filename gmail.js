@@ -20,31 +20,55 @@ function saveToken(token) {
   fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
 }
 
+let cachedClient = null;
+
 async function authorize() {
   const credentials = loadCredentials();
-  const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
-  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+  const { client_secret, client_id, redirect_uris } =
+    credentials.installed || credentials.web;
+  const oAuth2Client = new google.auth.OAuth2(
+    client_id,
+    client_secret,
+    redirect_uris[0]
+  );
+
   if (fs.existsSync(TOKEN_PATH)) {
     const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
     oAuth2Client.setCredentials(token);
+    cachedClient = oAuth2Client;
     return oAuth2Client;
   }
-  const authUrl = oAuth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES });
+
+  const authUrl = oAuth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: SCOPES,
+  });
   console.log('Please visit this URL to connect Gmail:\n', authUrl);
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const code = await new Promise((resolve) => rl.question('Enter the code from that page here: ', (input) => {
-    rl.close();
-    resolve(input.trim());
-  }));
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const code = await new Promise((resolve) =>
+    rl.question('Enter the code from that page here: ', (input) => {
+      rl.close();
+      resolve(input.trim());
+    })
+  );
+
   const { tokens } = await oAuth2Client.getToken(code);
   oAuth2Client.setCredentials(tokens);
   saveToken(tokens);
+  cachedClient = oAuth2Client;
   return oAuth2Client;
 }
 
 async function getGmail() {
-  const auth = await authorize();
-  return google.gmail({ version: 'v1', auth });
+  if (!cachedClient) {
+    cachedClient = await authorize();
+  }
+  return google.gmail({ version: 'v1', auth: cachedClient });
 }
 
 async function getRecentEmails(count) {
