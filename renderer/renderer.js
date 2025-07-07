@@ -196,6 +196,17 @@ async function handleLocalCommand(text) {
 onStreamToken((token) => {
     if (!emailToolRequested && token.includes('getRecentEmails')) {
         emailToolRequested = true
+        ;(async () => {
+            try {
+                const emails = await getRecentEmails(3)
+                for (const mail of emails) {
+                    const text = `\u2709\ufe0f *${mail.subject}*\nFrom: ${mail.sender}\n${mail.snippet}`
+                    addAssistantMessage(text)
+                }
+            } catch (err) {
+                addAssistantMessage('Failed to fetch recent emails')
+            }
+        })()
     }
     if (currentAiMessage) {
         currentAiMessage.textContent += token
@@ -216,6 +227,7 @@ onCancelTts(() => {
 })
 
 onVoiceText((text) => {
+    emailToolRequested = false
     const userMessage = document.createElement('div')
     userMessage.className = 'message user'
     userMessage.textContent = text
@@ -228,18 +240,6 @@ onVoiceText((text) => {
 })
 
 onVoiceReply(async (reply) => {
-    if (reply.startsWith('[EMAILS]')) {
-        try {
-            const emails = JSON.parse(reply.slice(8))
-            for (const mail of emails) {
-                const text = `\ud83d\udce8 *${mail.subject}*\nFrom: ${mail.sender}\n${mail.snippet}`
-                addAssistantMessage(text)
-            }
-        } catch (err) {
-            addAssistantMessage('Failed to display recent emails')
-        }
-        return
-    }
     if (currentAiMessage) {
         currentAiMessage.textContent = reply
     }
@@ -271,6 +271,8 @@ document.querySelector('.chat-input-bar').addEventListener('submit', async (e) =
     if (!userText) return
 
     input.value = ''
+
+    emailToolRequested = false
 
     if (isClearCommand(userText)) {
         console.log('[hector] \ud83e\udd9a clearing chat')
