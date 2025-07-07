@@ -199,6 +199,7 @@ onStreamToken((token) => {
         ;(async () => {
             try {
                 const emails = await getRecentEmails(3)
+                console.log('[hector] \ud83d\udcec fetched emails from bridge')
                 for (const mail of emails) {
                     const text = `Here's a recent email:\nSubject: ${mail.subject}\nFrom: ${mail.sender}\n${mail.snippet}`
                     addAssistantMessage(text)

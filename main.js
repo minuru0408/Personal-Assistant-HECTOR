@@ -49,7 +49,9 @@ ipcMain.handle('send-message', async (event, userText) => {
 });
 
 ipcMain.handle('get-recent-emails', async (_event, count) => {
-  return getRecentEmails(count);
+  const num = Number.isInteger(count) ? count : parseInt(count, 10);
+  const safeCount = Math.min(Math.max(num || 3, 1), 20);
+  return getRecentEmails(safeCount);
 });
 
 ipcMain.handle('send-email', async (_event, to, subject, body) => {
