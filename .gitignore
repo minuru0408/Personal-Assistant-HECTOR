@@ -15,6 +15,7 @@ dist/
 client_secret_149228795840-skuhq0abp14tkkogl0tip4t1eggl4q7d.apps.googleusercontent.com.json
 service-account.json
 gmail-credentials.json
+gmail-token.json
 
 # Audio files
 voice.wav
