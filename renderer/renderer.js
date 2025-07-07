@@ -19,7 +19,7 @@ const {
 } = window.electronAPI
 
 const { getTime } = window.systemAPI
-const { getRecentEmails } = window.electronAPI
+const { getRecentEmails, getUpcomingEvents } = window.electronAPI
 
 let audioQueue = Promise.resolve()
 let currentAudio = null
@@ -31,6 +31,7 @@ let lastRequestTime = 0
 const REQUEST_INTERVAL = 1000 // 1 second
 let buffered = ''
 let emailToolRequested = false
+let calendarToolRequested = false
 
 function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -219,6 +220,28 @@ onStreamToken((token) => {
                 }
             } finally {
                 emailToolRequested = false
+            }
+        })()
+    }
+    if (!calendarToolRequested && token.includes('[TOOL:get_calendar_events]')) {
+        calendarToolRequested = true;
+        (async () => {
+            try {
+                const events = await getUpcomingEvents(1)
+                if (currentAiMessage && events.length) {
+                    const ev = events[0]
+                    const when = new Date(ev.start).toLocaleString('en-US')
+                    const text = `\ud83d\udcc5 Your next event is "${ev.summary}" on ${when}, sir.`
+                    currentAiMessage.textContent = text
+                } else if (currentAiMessage) {
+                    currentAiMessage.textContent += 'Sorry, I could not fetch your calendar.'
+                }
+            } catch (err) {
+                if (currentAiMessage) {
+                    currentAiMessage.textContent += 'Sorry, I could not fetch your calendar.'
+                }
+            } finally {
+                calendarToolRequested = false
             }
         })()
     }
