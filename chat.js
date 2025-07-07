@@ -92,7 +92,9 @@ async function chatWithGPT(userText, onToken) {
       }
 
       if (!args.query || typeof args.query !== 'string' || args.query.trim() === '') {
-        throw new Error('Missing or empty query');
+        console.warn('🛑 Tool call received with missing or empty query. GPT may be unsure how to handle this.');
+        if (onToken) onToken("I'm afraid the request was unclear, sir. Could you kindly clarify what you'd like me to find?");
+        return '';
       }
     } catch (err) {
       console.error('❌ Failed to parse tool arguments:', err);
