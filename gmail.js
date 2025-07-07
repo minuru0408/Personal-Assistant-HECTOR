@@ -132,3 +132,10 @@ module.exports = {
   sendEmail,
   analyzeInbox
 };
+
+// Allow manual triggering from terminal for OAuth setup
+if (require.main === module) {
+  authorize()
+    .then(() => console.log('✅ Gmail authorization complete.'))
+    .catch((err) => console.error('❌ Authorization failed:', err));
+}
