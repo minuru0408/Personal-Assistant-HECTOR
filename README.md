@@ -12,6 +12,7 @@ request is sent without them. Web search requires `GOOGLE_API_KEY` and
 1. Copy `.env.example` to `.env`.
 2. Replace the example values in `.env` with your own keys. Set `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` for speech, and `GOOGLE_API_KEY` with `GOOGLE_CSE_ID` for web search.
 3. Install dependencies with `npm install`.
-4. Install SoX for audio recording (for example, `brew install sox`). Run `sox --version` to check that it works. If your computer asks for microphone access, allow it so recording can start.
-5. Make sure the `wav` package is installed; it encodes the microphone input as a proper WAV file.
-6. Start the app with `npm start`.
+4. Download a Gmail OAuth client JSON from the Google Cloud console and save it as `gmail-credentials.json` in this folder. Then run `node gmail.js` once and follow the link to grant access. This creates `gmail-token.json` so Hector can read your inbox.
+5. Install SoX for audio recording (for example, `brew install sox`). Run `sox --version` to check that it works. If your computer asks for microphone access, allow it so recording can start.
+6. Make sure the `wav` package is installed; it encodes the microphone input as a proper WAV file.
+7. Start the app with `npm start`.

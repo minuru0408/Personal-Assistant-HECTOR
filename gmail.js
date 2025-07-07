@@ -12,6 +12,11 @@ const CREDENTIALS_PATH = path.join(__dirname, 'gmail-credentials.json');
 const TOKEN_PATH = path.join(__dirname, 'gmail-token.json');
 
 function loadCredentials() {
+  if (!fs.existsSync(CREDENTIALS_PATH)) {
+    throw new Error(
+      `Gmail credentials not found. Please place your OAuth client JSON at ${CREDENTIALS_PATH}.`
+    );
+  }
   const content = fs.readFileSync(CREDENTIALS_PATH, 'utf8');
   return JSON.parse(content);
 }
@@ -26,10 +31,11 @@ async function authorize() {
   const credentials = loadCredentials();
   const { client_secret, client_id, redirect_uris } =
     credentials.installed || credentials.web;
+  const redirectUri = (redirect_uris && redirect_uris[0]) || 'urn:ietf:wg:oauth:2.0:oob';
   const oAuth2Client = new google.auth.OAuth2(
     client_id,
     client_secret,
-    'urn:ietf:wg:oauth:2.0:oob'
+    redirectUri
   );
 
   if (fs.existsSync(TOKEN_PATH)) {
