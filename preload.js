@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     fs.writeFileSync(file, content, 'utf8');
     return true;
   },
+  getRecentEmails: (count) => ipcRenderer.invoke('get-recent-emails', count),
   run: (cmd) =>
     new Promise((resolve) =>
       exec(cmd, (error, stdout, stderr) => {
