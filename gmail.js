@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { google } = require('googleapis');
+const readline = require('readline');
 
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
@@ -29,8 +30,16 @@ async function authorize() {
     return oAuth2Client;
   }
   const authUrl = oAuth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES });
-  console.log('Authorize this app by visiting this url:', authUrl);
-  throw new Error('Gmail token not found. Generate it using the URL above and place it in gmail-token.json');
+  console.log('Please visit this URL to connect Gmail:\n', authUrl);
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const code = await new Promise((resolve) => rl.question('Enter the code from that page here: ', (input) => {
+    rl.close();
+    resolve(input.trim());
+  }));
+  const { tokens } = await oAuth2Client.getToken(code);
+  oAuth2Client.setCredentials(tokens);
+  saveToken(tokens);
+  return oAuth2Client;
 }
 
 async function getGmail() {
