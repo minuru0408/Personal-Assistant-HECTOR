@@ -3,6 +3,11 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { exec } = require('child_process');
+const {
+  getRecentEmails,
+  sendEmail,
+  analyzeInbox,
+} = require('./gmail');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   sendMessage: (text) => ipcRenderer.invoke('send-message', text),
@@ -44,5 +49,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 contextBridge.exposeInMainWorld('systemAPI', {
   getTime: () => new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
   getDate: () => new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+  getRecentEmails: (count) => getRecentEmails(count),
+  sendEmail: (to, subject, body) => sendEmail(to, subject, body),
+  analyzeInbox: () => analyzeInbox(),
 });
 
