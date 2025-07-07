@@ -53,6 +53,21 @@ const calculateExpressionTool = {
   }
 };
 
+const getRecentEmailsTool = {
+  type: 'function',
+  function: {
+    name: 'getRecentEmails',
+    description: 'Fetches the most recent emails from the user\'s Gmail inbox',
+    parameters: {
+      type: 'object',
+      properties: {
+        count: { type: 'integer', description: 'Number of emails to fetch (default is 3)' }
+      },
+      required: ['count']
+    }
+  }
+};
+
 
 async function chatWithGPT(userText, onToken) {
   const messages = [
@@ -150,7 +165,7 @@ async function chatWithGPT(userText, onToken) {
   const firstRes = await openai.chat.completions.create({
     model: 'gpt-4',
     messages,
-    tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool]
+    tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool, getRecentEmailsTool]
   });
 
   const assistantMsg = firstRes.choices[0].message;
@@ -161,6 +176,11 @@ async function chatWithGPT(userText, onToken) {
   if (toolCall) {
     console.log(`🧰 Tool requested: ${toolCall.function.name}`);
     const name = toolCall.function.name;
+    
+    if (name === 'getRecentEmails' && onToken) {
+      onToken('[TOOL:getRecentEmails]');
+    }
+    
     let result = '';
     if (name === 'search_web') {
       let args = {};
@@ -210,6 +230,8 @@ async function chatWithGPT(userText, onToken) {
       }
 
       result = calculateExpression(args.expression);
+    } else if (name === 'getRecentEmails') {
+      result = '[EMAILS]';
     }
 
     if (result) {
@@ -223,7 +245,7 @@ async function chatWithGPT(userText, onToken) {
         model: 'gpt-4',
         stream: true,
         messages,
-    tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool]
+        tools: [searchWebTool, getTimeTool, getDateTool, calculateExpressionTool, getRecentEmailsTool]
       });
 
       for await (const chunk of finalRes) {
