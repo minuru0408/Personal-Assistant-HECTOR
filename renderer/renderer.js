@@ -126,8 +126,10 @@ function flushBuffer() {
 
 function queueToken(token) {
     buffered += token
-    const words = buffered.trim().split(/\s+/).filter(Boolean)
-    if (words.length >= 3) {
+    const trimmed = buffered.trim()
+    const endsWithPunct = /[.!?]$/.test(trimmed)
+    const exceedsLength = trimmed.length >= 120
+    if (endsWithPunct || exceedsLength) {
         pendingText += buffered
         buffered = ''
         processQueue()
