@@ -3,6 +3,7 @@ const { appendMemory } = require('./memory');
 const { searchWeb } = require('./utils/searchWeb');
 const { calculateExpression } = require('./utils/calculateExpression');
 const { sendEmail } = require('./gmail');
+const { createEvent } = require('./utils/calendar');
 require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -97,6 +98,24 @@ const sendEmailTool = {
         body: { type: 'string', description: 'Body content of the email' }
       },
       required: ['to', 'subject', 'body']
+    }
+  }
+};
+
+const createEventTool = {
+  type: 'function',
+  function: {
+    name: 'create_event',
+    description: 'Create a Google Calendar event',
+    parameters: {
+      type: 'object',
+      properties: {
+        summary: { type: 'string', description: 'Event title' },
+        description: { type: 'string', description: 'Event description' },
+        start: { type: 'string', description: 'Start time in ISO format' },
+        end: { type: 'string', description: 'End time in ISO format' }
+      },
+      required: ['summary', 'start', 'end']
     }
   }
 };
@@ -204,7 +223,8 @@ async function chatWithGPT(userText, onToken) {
       calculateExpressionTool,
       getRecentEmailsTool,
       sendEmailTool,
-      getCalendarEventsTool
+      getCalendarEventsTool,
+      createEventTool
     ]
   });
 
@@ -276,6 +296,18 @@ async function chatWithGPT(userText, onToken) {
       result = '[EMAILS]';
     } else if (name === 'get_calendar_events') {
       result = '[EVENTS]';
+    } else if (name === 'create_event') {
+      let args = {};
+      try {
+        const rawArgs = toolCall.function.arguments;
+        args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
+        console.log(`📅 Creating event: "${args.summary}"`);
+        await createEvent(args.summary, args.description || '', args.start, args.end);
+        result = `\ud83d\udcc5 I\u2019ve scheduled "${args.summary}" from ${args.start} to ${args.end}, sir.`;
+      } catch (err) {
+        console.error('❌ Failed to create event:', err);
+        result = `My apologies, sir. I couldn\u2019t add that to your calendar.`;
+      }
     } else if (name === 'send_email') {
       let args = {};
       try {
@@ -308,7 +340,8 @@ async function chatWithGPT(userText, onToken) {
           calculateExpressionTool,
           getRecentEmailsTool,
           sendEmailTool,
-          getCalendarEventsTool
+          getCalendarEventsTool,
+          createEventTool
         ]
       });
 
