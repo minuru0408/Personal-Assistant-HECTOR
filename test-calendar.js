@@ -1,8 +1,9 @@
 const { getUpcomingEvents } = require('./utils/calendar');
 
-getUpcomingEvents().then(events => {
-  console.log('📆 Upcoming Events:\n');
+(async () => {
+  const events = await getUpcomingEvents(5);
+  console.log('📅 Upcoming events:');
   for (const e of events) {
-    console.log(`${e.summary} - ${e.start}`);
+    console.log(`• ${e.summary} at ${e.start}`);
   }
-});
+})();
