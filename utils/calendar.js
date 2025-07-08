@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-const { authorize, readTokenFromFile } = require('../auth');
+const { authorize } = require('../auth');
 
 let cachedClient = null;
 
@@ -29,7 +29,7 @@ async function getUpcomingEvents(count = 3) {
 }
 
 async function createEvent(summary, description, start, end) {
-  const auth = await readTokenFromFile();
+  const auth = await authorize();
   const calendar = google.calendar({ version: 'v3', auth });
 
   const event = {
