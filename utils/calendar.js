@@ -29,31 +29,32 @@ async function getUpcomingEvents(count = 3) {
 }
 
 async function createEvent(summary, description, start, end) {
-  const auth = await authorize();
-  const calendar = google.calendar({ version: 'v3', auth });
-
-  const event = {
-    summary: summary,
-    description: description,
-    start: {
-      dateTime: start,
-      timeZone: 'Asia/Tokyo'
-    },
-    end: {
-      dateTime: end,
-      timeZone: 'Asia/Tokyo'
-    }
-  };
-
   try {
-    const response = await calendar.events.insert({
+    const calendar = await getCalendar();
+    const timeZone = 'Asia/Tokyo';
+    const event = {
+      summary,
+      description,
+      start: {
+        dateTime: start,
+        timeZone
+      },
+      end: {
+        dateTime: end,
+        timeZone
+      }
+    };
+
+    const res = await calendar.events.insert({
       calendarId: 'primary',
-      resource: event,
+      requestBody: event
     });
-    return response.data;
-  } catch (error) {
-    console.error('Error creating event:', error);
-    throw error;
+
+    console.log('✅ Event created:', res.data.htmlLink);
+    return `Event "${summary}" scheduled from ${start} to ${end}`;
+  } catch (err) {
+    console.error('❌ Failed to create calendar event:', err.message);
+    throw err;
   }
 }
 

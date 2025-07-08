@@ -32,3 +32,23 @@ async function testCalendar() {
 }
 
 testCalendar();
+
+const { createEvent } = require('./utils/calendar');
+
+(async () => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0);
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 18, 0);
+
+  try {
+    const msg = await createEvent(
+      'Test: Shopping Trip',
+      'Auto-created event by Hector',
+      start.toISOString(),
+      end.toISOString()
+    );
+    console.log(msg);
+  } catch (err) {
+    console.error('❌ Test failed:', err.message);
+  }
+})();
