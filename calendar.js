@@ -9,15 +9,24 @@ const TOKEN_PATH = path.join(__dirname, 'calendar-token.json');
 
 let cachedClient = null;
 
-async function authorize() {
+function loadCredentials() {
   if (!fs.existsSync(CREDENTIALS_PATH)) {
-    throw new Error('❌ Calendar credentials not found at ' + CREDENTIALS_PATH);
+    throw new Error('Calendar credentials not found. Please place your OAuth client JSON at ' + CREDENTIALS_PATH);
   }
+  const content = fs.readFileSync(CREDENTIALS_PATH, 'utf8');
+  return JSON.parse(content);
+}
 
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
+function saveToken(token) {
+  fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
+  console.log('✅ Token saved to:', TOKEN_PATH);
+}
+
+async function authorize() {
+  const credentials = loadCredentials();
   const { client_secret, client_id } = credentials.installed || credentials.web;
   const oAuth2Client = new google.auth.OAuth2(
-    client_id,
+    client_id, 
     client_secret,
     'urn:ietf:wg:oauth:2.0:oob'
   );
@@ -33,32 +42,37 @@ async function authorize() {
     access_type: 'offline',
     scope: SCOPES
   });
-
-  console.log('🔗 Please visit this URL to authorize calendar access:\n', authUrl);
+  console.log('Please visit this URL to authorize calendar access:\n', authUrl);
 
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
   });
 
-  const code = await new Promise(resolve => {
-    rl.question('📥 Enter the authorization code: ', code => {
+  const code = await new Promise((resolve) =>
+    rl.question('Enter the code from that page here: ', (input) => {
       rl.close();
-      resolve(code.trim());
-    });
-  });
+      resolve(input.trim());
+    })
+  );
 
   try {
     const { tokens } = await oAuth2Client.getToken(code);
     oAuth2Client.setCredentials(tokens);
-    fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
-    console.log('✅ Calendar authorization complete');
+    saveToken(tokens);
     cachedClient = oAuth2Client;
     return oAuth2Client;
   } catch (err) {
-    console.error('❌ Error retrieving access token:', err.message);
+    console.error('Failed to retrieve access token:', err);
     throw err;
   }
+}
+
+// Allow manual triggering from terminal for OAuth setup
+if (require.main === module) {
+  authorize()
+    .then(() => console.log('✅ Calendar authorization complete.'))
+    .catch((err) => console.error('❌ Authorization failed:', err));
 }
 
 module.exports = { authorize };
