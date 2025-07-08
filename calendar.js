@@ -3,7 +3,7 @@ const path = require('path');
 const readline = require('readline');
 const { google } = require('googleapis');
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 const CREDENTIALS_PATH = path.join(__dirname, 'calendar-credentials.json');
 const TOKEN_PATH = path.join(__dirname, 'calendar-token.json');
 
