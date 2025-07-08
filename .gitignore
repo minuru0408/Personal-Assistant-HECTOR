@@ -17,6 +17,7 @@ service-account.json
 gmail-credentials.json
 gmail-token.json
 calendar-credentials.json
+calendar-token.json
 
 # Audio files
 voice.wav
