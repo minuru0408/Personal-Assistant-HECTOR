@@ -15,8 +15,12 @@ async function authorize() {
   }
 
   const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
-  const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
-  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+  const { client_secret, client_id } = credentials.installed || credentials.web;
+  const oAuth2Client = new google.auth.OAuth2(
+    client_id,
+    client_secret,
+    'urn:ietf:wg:oauth:2.0:oob'
+  );
 
   if (fs.existsSync(TOKEN_PATH)) {
     const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
@@ -30,7 +34,7 @@ async function authorize() {
     scope: SCOPES
   });
 
-  console.log('🔗 Visit this URL to authorize calendar access:\n', authUrl);
+  console.log('🔗 Please visit this URL to authorize calendar access:\n', authUrl);
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -38,19 +42,23 @@ async function authorize() {
   });
 
   const code = await new Promise(resolve => {
-    rl.question('📥 Enter the authorization code from that page here: ', input => {
+    rl.question('📥 Enter the authorization code: ', code => {
       rl.close();
-      resolve(input.trim());
+      resolve(code.trim());
     });
   });
 
-  const { tokens } = await oAuth2Client.getToken(code);
-  oAuth2Client.setCredentials(tokens);
-  fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
-  console.log('✅ Calendar authorization complete.');
-
-  cachedClient = oAuth2Client;
-  return oAuth2Client;
+  try {
+    const { tokens } = await oAuth2Client.getToken(code);
+    oAuth2Client.setCredentials(tokens);
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
+    console.log('✅ Calendar authorization complete');
+    cachedClient = oAuth2Client;
+    return oAuth2Client;
+  } catch (err) {
+    console.error('❌ Error retrieving access token:', err.message);
+    throw err;
+  }
 }
 
 module.exports = { authorize };
