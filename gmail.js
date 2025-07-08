@@ -1,74 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const { google } = require('googleapis');
-const readline = require('readline');
-
-const SCOPES = [
-  'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/gmail.send'
-];
-const CREDENTIALS_PATH = path.join(__dirname, 'gmail-credentials.json');
-const TOKEN_PATH = path.join(__dirname, 'gmail-token.json');
-
-function loadCredentials() {
-  if (!fs.existsSync(CREDENTIALS_PATH)) {
-    throw new Error(
-      `Gmail credentials not found. Please place your OAuth client JSON at ${CREDENTIALS_PATH}.`
-    );
-  }
-  const content = fs.readFileSync(CREDENTIALS_PATH, 'utf8');
-  return JSON.parse(content);
-}
-
-function saveToken(token) {
-  fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
-}
+const { authorize } = require('./auth');
 
 let cachedClient = null;
-
-async function authorize() {
-  const credentials = loadCredentials();
-  const { client_secret, client_id, redirect_uris } =
-    credentials.installed || credentials.web;
-  const redirectUri = (redirect_uris && redirect_uris[0]) || 'urn:ietf:wg:oauth:2.0:oob';
-  const oAuth2Client = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    redirectUri
-  );
-
-  if (fs.existsSync(TOKEN_PATH)) {
-    const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
-    oAuth2Client.setCredentials(token);
-    cachedClient = oAuth2Client;
-    return oAuth2Client;
-  }
-
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  });
-  console.log('Please visit this URL to connect Gmail:\n', authUrl);
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  const code = await new Promise((resolve) =>
-    rl.question('Enter the code from that page here: ', (input) => {
-      rl.close();
-      resolve(input.trim());
-    })
-  );
-
-  const { tokens } = await oAuth2Client.getToken(code);
-  oAuth2Client.setCredentials(tokens);
-  saveToken(tokens);
-  cachedClient = oAuth2Client;
-  return oAuth2Client;
-}
 
 async function getGmail() {
   if (!cachedClient) {
