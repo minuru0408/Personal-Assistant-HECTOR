@@ -3,15 +3,13 @@ const path = require('path');
 const { google } = require('googleapis');
 const readline = require('readline');
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 const CREDENTIALS_PATH = path.join(__dirname, 'calendar-credentials.json');
 const TOKEN_PATH = path.join(__dirname, 'calendar-token.json');
 
 function loadCredentials() {
   if (!fs.existsSync(CREDENTIALS_PATH)) {
-    throw new Error(
-      `Calendar credentials not found. Please place your OAuth client JSON at ${CREDENTIALS_PATH}.`
-    );
+    throw new Error(`❌ Calendar credentials not found at ${CREDENTIALS_PATH}`);
   }
   const content = fs.readFileSync(CREDENTIALS_PATH, 'utf8');
   return JSON.parse(content);
@@ -28,11 +26,7 @@ async function authorize() {
   const { client_secret, client_id, redirect_uris } =
     credentials.installed || credentials.web;
   const redirectUri = (redirect_uris && redirect_uris[0]) || 'urn:ietf:wg:oauth:2.0:oob';
-  const oAuth2Client = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    redirectUri
-  );
+  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirectUri);
 
   if (fs.existsSync(TOKEN_PATH)) {
     const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
@@ -45,7 +39,8 @@ async function authorize() {
     access_type: 'offline',
     scope: SCOPES,
   });
-  console.log('Please visit this URL to connect Google Calendar:\n', authUrl);
+
+  console.log('🔗 Please visit this URL to authorize Calendar access:\n', authUrl);
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -53,7 +48,7 @@ async function authorize() {
   });
 
   const code = await new Promise((resolve) =>
-    rl.question('Enter the code from that page here: ', (input) => {
+    rl.question('📥 Enter the code from that page here: ', (input) => {
       rl.close();
       resolve(input.trim());
     })
@@ -63,6 +58,7 @@ async function authorize() {
   oAuth2Client.setCredentials(tokens);
   saveToken(tokens);
   cachedClient = oAuth2Client;
+  console.log('✅ Calendar authorization complete');
   return oAuth2Client;
 }
 
@@ -73,7 +69,7 @@ async function getCalendar() {
   return google.calendar({ version: 'v3', auth: cachedClient });
 }
 
-async function getUpcomingEvents(count) {
+async function getUpcomingEvents(count = 3) {
   const calendar = await getCalendar();
   const res = await calendar.events.list({
     calendarId: 'primary',
@@ -82,38 +78,20 @@ async function getUpcomingEvents(count) {
     singleEvents: true,
     orderBy: 'startTime',
   });
+
   const events = res.data.items || [];
-  return events.map((ev) => ({
-    id: ev.id,
-    summary: ev.summary || '',
-    start: ev.start.dateTime || ev.start.date,
-    end: ev.end.dateTime || ev.end.date,
-    description: ev.description || '',
-    location: ev.location || '',
+  return events.map((e) => ({
+    summary: e.summary || 'No Title',
+    start: e.start?.dateTime || e.start?.date || 'No Start Time',
+    description: e.description || '',
   }));
 }
 
-async function createEvent({ summary, start, end, description, location }) {
-  const calendar = await getCalendar();
-  const event = {
-    summary,
-    start: { dateTime: start },
-    end: { dateTime: end },
-    description,
-    location,
-  };
-  const res = await calendar.events.insert({
-    calendarId: 'primary',
-    requestBody: event,
-  });
-  return res.data;
-}
-
 module.exports = {
-  getUpcomingEvents,
-  createEvent,
+  getUpcomingEvents
 };
 
+// Allow manual testing
 if (require.main === module) {
   authorize()
     .then(() => console.log('✅ Calendar authorization complete.'))
