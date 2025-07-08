@@ -3,7 +3,7 @@ const path = require('path');
 const { google } = require('googleapis');
 const readline = require('readline');
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
 const CREDENTIALS_PATH = path.join(__dirname, 'calendar-credentials.json');
 const TOKEN_PATH = path.join(__dirname, 'calendar-token.json');
 
@@ -87,8 +87,28 @@ async function getUpcomingEvents(count = 3) {
   }));
 }
 
+async function createEvent(summary, description, start, end) {
+  try {
+    const calendar = await getCalendar();
+    await calendar.events.insert({
+      calendarId: 'primary',
+      requestBody: {
+        summary,
+        description,
+        start: { dateTime: start },
+        end: { dateTime: end }
+      }
+    });
+    return `Event "${summary}" scheduled from ${start} to ${end}`;
+  } catch (err) {
+    console.error('❌ Failed to create calendar event:', err);
+    throw err;
+  }
+}
+
 module.exports = {
-  getUpcomingEvents
+  getUpcomingEvents,
+  createEvent
 };
 
 // Allow manual testing
