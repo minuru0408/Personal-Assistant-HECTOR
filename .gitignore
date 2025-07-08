@@ -22,3 +22,5 @@ voice.wav
 voice_clean.wav
 test.wav
 
+utils/calendar-credentials.json
+utils/calendar-token.json
