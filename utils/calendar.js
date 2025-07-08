@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-const { authorize } = require('../auth');
+const { authorize, readTokenFromFile } = require('../auth');
 
 let cachedClient = null;
 
@@ -29,21 +29,31 @@ async function getUpcomingEvents(count = 3) {
 }
 
 async function createEvent(summary, description, start, end) {
+  const auth = await readTokenFromFile();
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  const event = {
+    summary: summary,
+    description: description,
+    start: {
+      dateTime: start,
+      timeZone: 'Asia/Tokyo'
+    },
+    end: {
+      dateTime: end,
+      timeZone: 'Asia/Tokyo'
+    }
+  };
+
   try {
-    const calendar = await getCalendar();
-    await calendar.events.insert({
+    const response = await calendar.events.insert({
       calendarId: 'primary',
-      requestBody: {
-        summary,
-        description,
-        start: { dateTime: start },
-        end: { dateTime: end }
-      }
+      resource: event,
     });
-    return `Event "${summary}" scheduled from ${start} to ${end}`;
-  } catch (err) {
-    console.error('❌ Failed to create calendar event:', err);
-    throw err;
+    return response.data;
+  } catch (error) {
+    console.error('Error creating event:', error);
+    throw error;
   }
 }
 
