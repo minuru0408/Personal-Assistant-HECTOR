@@ -39,7 +39,15 @@ async function listCalendars() {
   return items;
 }
 
-async function createEvent(summary, description, start, end, calendarId = 'primary', timeZone = 'UTC') {
+async function createEvent(
+  summary,
+  description,
+  start,
+  end,
+  calendarId = 'primary',
+  timeZone = 'UTC',
+  debug = false
+) {
   try {
     const calendar = await getCalendar();
 
@@ -59,16 +67,30 @@ async function createEvent(summary, description, start, end, calendarId = 'prima
       },
     };
 
+    if (debug) {
+      console.log(
+        '📤 Sending event payload to Google:',
+        JSON.stringify(event, null, 2)
+      );
+    }
+
     const res = await calendar.events.insert({
       calendarId,
       requestBody: event,
     });
 
-    console.log('✅ Event created:', res.data.htmlLink);
-    return `Event "${summary}" scheduled from ${start} to ${end} in calendar ${calendarId}`;
+    const link = res && res.data && res.data.htmlLink;
+    if (res.status === 200 && link) {
+      console.log('✅ Event created:', link);
+      return link;
+    }
+
+    const msg = res.statusText || 'Unknown error creating event';
+    console.error('❌ Failed to create calendar event:', msg);
+    return msg;
   } catch (err) {
     console.error('❌ Failed to create calendar event:', err.message);
-    throw err;
+    return err.message;
   }
 }
 
