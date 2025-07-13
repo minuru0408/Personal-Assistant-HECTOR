@@ -65,7 +65,14 @@ ipcMain.handle('get-upcoming-events', async (_event, count) => {
 });
 
 ipcMain.handle('create-event', async (_event, details) => {
-  return createEvent(details);
+  return createEvent(
+    details.summary,
+    details.description,
+    details.start,
+    details.end,
+    details.calendarId || 'primary',
+    details.timeZone || 'Asia/Tokyo'
+  );
 });
 
 ipcMain.handle('send-email', async (_event, to, subject, body) => {
