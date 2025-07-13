@@ -4,6 +4,7 @@ const { searchWeb } = require('./utils/searchWeb');
 const { calculateExpression } = require('./utils/calculateExpression');
 const { sendEmail } = require('./gmail');
 const { createEvent } = require('./utils/calendar');
+const { parseTimeToday } = require('./utils/time');
 require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -302,8 +303,26 @@ async function chatWithGPT(userText, onToken) {
         const rawArgs = toolCall.function.arguments;
         args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
         console.log(`📅 Creating event: "${args.summary}"`);
-        await createEvent(args.summary, args.description || '', args.start, args.end);
-        result = `\ud83d\udcc5 I\u2019ve scheduled "${args.summary}" from ${args.start} to ${args.end}, sir.`;
+
+        const timeZone = args.timeZone || 'Asia/Tokyo';
+        let start = parseTimeToday(args.start);
+        let end = args.end ? parseTimeToday(args.end) : null;
+
+        if (!end && start) {
+          const startDate = new Date(start);
+          const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+          end = parseTimeToday(endDate);
+        }
+
+        await createEvent(
+          args.summary,
+          args.description || '',
+          start,
+          end,
+          args.calendarId || 'primary',
+          timeZone
+        );
+        result = `\ud83d\udcc5 I\u2019ve scheduled "${args.summary}" at ${start} (${timeZone}), sir.`;
       } catch (err) {
         console.error('❌ Failed to create event:', err);
         result = `My apologies, sir. I couldn\u2019t add that to your calendar.`;
