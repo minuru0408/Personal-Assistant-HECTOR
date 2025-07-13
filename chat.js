@@ -3,7 +3,7 @@ const { appendMemory } = require('./memory');
 const { searchWeb } = require('./utils/searchWeb');
 const { calculateExpression } = require('./utils/calculateExpression');
 const { sendEmail } = require('./gmail');
-const { createEvent } = require('./utils/calendar');
+const { createEvent, deleteEvent } = require('./utils/calendar');
 const { parseTimeToday } = require('./utils/time');
 require('dotenv').config();
 
@@ -121,11 +121,28 @@ const createEventTool = {
   }
 };
 
+const deleteEventTool = {
+  type: 'function',
+  function: {
+    name: 'delete_event',
+    description: 'Delete a Google Calendar event by ID',
+    parameters: {
+      type: 'object',
+      properties: {
+        eventId: { type: 'string', description: 'ID of the event to delete' }
+      },
+      required: ['eventId']
+    }
+  }
+};
+
 async function chatWithGPT(userText, onToken) {
   const messages = [
     {
       role: 'system',
       content: `You are Hector, a highly advanced AI assistant modeled after a middle-aged British butler. You are calm, articulate, and speak with precision, courtesy, and subtle dry wit. Your tone is formal and composed, never casual. You never raise your voice, and you handle every request with discretion and efficiency.
+
+    Keep responses short and practical.
 
     You are able to read and analyze the user's Gmail inbox and compose emails on request. Use these abilities judiciously and keep the contents private unless the user explicitly asks for a summary or analysis.
 
@@ -156,6 +173,10 @@ async function chatWithGPT(userText, onToken) {
       - Use deleteEmailById() to remove mail
       - NEVER use search_web for email data
       - Do not share email content with GPT unless summarizing or analyzing
+    • 🗓 Calendar Access:
+      - Use get_calendar_events() for upcoming events
+      - Use createEvent() to add events
+      - Use deleteEvent() to remove events
     
     2. EXTERNAL DATA ACCESS (Last Resort)
     ───────────────────────────────────
@@ -186,7 +207,7 @@ async function chatWithGPT(userText, onToken) {
     RESPONSE GUIDELINES:
     ══════════════════
     • Tone: Formal, courteous, with subtle wit
-    • Style: Clear, precise, never verbose
+    • Style: Clear and brief. Reply with short statements like "Done, sir." or "Marked for 5 PM."
     • Character: Always maintain butler persona
     • APIs: Never mention technical details unless asked
     • Errors: Handle with grace and offer alternatives
@@ -225,7 +246,8 @@ async function chatWithGPT(userText, onToken) {
       getRecentEmailsTool,
       sendEmailTool,
       getCalendarEventsTool,
-      createEventTool
+      createEventTool,
+      deleteEventTool
     ]
   });
 
@@ -320,6 +342,18 @@ async function chatWithGPT(userText, onToken) {
         console.error('❌ Failed to create event:', err);
         result = `My apologies, sir. I couldn\u2019t add that to your calendar.`;
       }
+    } else if (name === 'delete_event') {
+      let args = {};
+      try {
+        const rawArgs = toolCall.function.arguments;
+        args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
+        console.log(`🗑️ Deleting event: ${args.eventId}`);
+        await deleteEvent(args.eventId);
+        result = 'Deleted, sir.';
+      } catch (err) {
+        console.error('❌ Failed to delete event:', err);
+        result = `I'm sorry, sir. I couldn't remove that event.`;
+      }
     } else if (name === 'send_email') {
       let args = {};
       try {
@@ -353,7 +387,8 @@ async function chatWithGPT(userText, onToken) {
           getRecentEmailsTool,
           sendEmailTool,
           getCalendarEventsTool,
-          createEventTool
+          createEventTool,
+          deleteEventTool
         ]
       });
 
