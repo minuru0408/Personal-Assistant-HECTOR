@@ -11,6 +11,7 @@ const {
 const {
   getUpcomingEvents,
   createEvent,
+  deleteEvent
 } = require('./utils/calendar');
 
 function checkEnv() {
@@ -72,6 +73,10 @@ ipcMain.handle('create-event', async (_event, details) => {
     details.end,
     details.calendarId || 'primary'
   );
+});
+
+ipcMain.handle('delete-event', async (_event, eventId) => {
+  return deleteEvent(eventId);
 });
 
 ipcMain.handle('send-email', async (_event, to, subject, body) => {

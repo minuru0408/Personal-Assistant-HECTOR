@@ -87,10 +87,23 @@ async function createEvent(
   }
 }
 
+async function deleteEvent(eventId, calendarId = 'primary') {
+  try {
+    const calendar = await getCalendar();
+    await calendar.events.delete({ calendarId, eventId });
+    console.log('✅ Event deleted:', eventId);
+    return true;
+  } catch (err) {
+    console.error('❌ Failed to delete calendar event:', err.message);
+    return false;
+  }
+}
+
 module.exports = {
   getUpcomingEvents,
   listCalendars,
-  createEvent
+  createEvent,
+  deleteEvent
 };
 
 // Allow manual testing
