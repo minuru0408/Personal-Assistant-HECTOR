@@ -1,7 +1,10 @@
-const { createEvent, getUpcomingEvents } = require('./utils/calendar');
+const { createEvent, getUpcomingEvents, listCalendars } = require('./utils/calendar');
 
 async function testCalendar() {
   try {
+    // Display calendars and pick one ID if needed
+    await listCalendars();
+
     // 🗓️ Create an event (adjust time to now +1hr for real-time testing)
     const now = new Date();
     const start = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour later
@@ -14,7 +17,9 @@ async function testCalendar() {
       summary,
       description,
       start.toISOString(),
-      end.toISOString()
+      end.toISOString(),
+      'primary',
+      'UTC'
     );
 
     console.log('✅ Event Created:', result);
@@ -33,8 +38,6 @@ async function testCalendar() {
 
 testCalendar();
 
-const { createEvent } = require('./utils/calendar');
-
 (async () => {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0);
@@ -45,7 +48,9 @@ const { createEvent } = require('./utils/calendar');
       'Test: Shopping Trip',
       'Auto-created event by Hector',
       start.toISOString(),
-      end.toISOString()
+      end.toISOString(),
+      'primary',
+      'UTC'
     );
     console.log(msg);
   } catch (err) {
