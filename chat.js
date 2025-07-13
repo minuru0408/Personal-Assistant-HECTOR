@@ -1,9 +1,9 @@
 const OpenAI = require('openai');
-const { appendMemory } = require('./memory');
+const { appendMemory, readRecentMemory } = require('./memory');
 const { searchWeb } = require('./utils/searchWeb');
 const { calculateExpression } = require('./utils/calculateExpression');
 const { sendEmail } = require('./gmail');
-const { createEvent, deleteEvent } = require('./utils/calendar');
+const { createEvent, deleteEvent, findEvents } = require('./utils/calendar');
 const { parseTimeToday } = require('./utils/time');
 require('dotenv').config();
 
@@ -125,13 +125,29 @@ const deleteEventTool = {
   type: 'function',
   function: {
     name: 'delete_event',
-    description: 'Delete a Google Calendar event by ID',
+    description: 'Delete a calendar event by title, time, or index',
     parameters: {
       type: 'object',
       properties: {
-        eventId: { type: 'string', description: 'ID of the event to delete' }
-      },
-      required: ['eventId']
+        title: { type: 'string', description: 'Event title to match' },
+        time: { type: 'string', description: 'Date or start time to match' },
+        index: { type: 'integer', description: 'Index of the event when multiple are listed' },
+        eventId: { type: 'string', description: 'Direct ID of the event' }
+      }
+    }
+  }
+};
+
+const readMemoryTool = {
+  type: 'function',
+  function: {
+    name: 'read_recent_memory',
+    description: 'Fetch the last few conversation entries from the memory log',
+    parameters: {
+      type: 'object',
+      properties: {
+        count: { type: 'integer', description: 'Number of entries to return (default 5)' }
+      }
     }
   }
 };
@@ -177,6 +193,8 @@ async function chatWithGPT(userText, onToken) {
       - Use get_calendar_events() for upcoming events
       - Use createEvent() to add events
       - Use deleteEvent() to remove events
+    • 🧠 Memory Log:
+      - Use read_recent_memory() to recall past conversation entries
     
     2. EXTERNAL DATA ACCESS (Last Resort)
     ───────────────────────────────────
@@ -247,7 +265,8 @@ async function chatWithGPT(userText, onToken) {
       sendEmailTool,
       getCalendarEventsTool,
       createEventTool,
-      deleteEventTool
+      deleteEventTool,
+      readMemoryTool
     ]
   });
 
@@ -347,12 +366,56 @@ async function chatWithGPT(userText, onToken) {
       try {
         const rawArgs = toolCall.function.arguments;
         args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
-        console.log(`🗑️ Deleting event: ${args.eventId}`);
-        await deleteEvent(args.eventId);
-        result = 'Deleted, sir.';
+        let events = [];
+        if (args.eventId) {
+          await deleteEvent(args.eventId);
+          result = 'Deleted, sir.';
+        } else {
+          events = await findEvents({ title: args.title, time: args.time });
+          if (args.index !== undefined) {
+            const idx = parseInt(args.index, 10) - 1;
+            const ev = events[idx];
+            if (ev) {
+              await deleteEvent(ev.id);
+              result = `Deleted "${ev.summary}", sir.`;
+            } else {
+              result = 'I could not find that selection, sir.';
+            }
+          } else if (events.length === 1) {
+            await deleteEvent(events[0].id);
+            result = `Deleted "${events[0].summary}", sir.`;
+          } else if (events.length > 1) {
+            const list = events
+              .map((e, i) => `${i + 1}. ${e.summary} at ${e.start.dateTime || e.start.date}`)
+              .join('\n');
+            result = `I found multiple events:\n${list}\nWhich should I remove, sir?`;
+          } else {
+            result = 'No matching events found, sir.';
+          }
+        }
       } catch (err) {
         console.error('❌ Failed to delete event:', err);
         result = `I'm sorry, sir. I couldn't remove that event.`;
+      }
+    } else if (name === 'read_recent_memory') {
+      let args = {};
+      try {
+        const rawArgs = toolCall.function.arguments;
+        args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
+        const rows = await readRecentMemory(args.count || 5);
+        if (!rows.length) {
+          result = 'I have nothing recorded, sir.';
+        } else {
+          result = rows
+            .map(([t, u, h]) => {
+              const time = new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+              return `At ${time}, you said '${u}'. I replied '${h}'.`;
+            })
+            .join(' ');
+        }
+      } catch (err) {
+        console.error('❌ Failed to read memory:', err);
+        result = 'I am unable to recall those notes, sir.';
       }
     } else if (name === 'send_email') {
       let args = {};
@@ -388,7 +451,8 @@ async function chatWithGPT(userText, onToken) {
           sendEmailTool,
           getCalendarEventsTool,
           createEventTool,
-          deleteEventTool
+          deleteEventTool,
+          readMemoryTool
         ]
       });
 

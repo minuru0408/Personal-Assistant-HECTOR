@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { chatWithGPT } = require('./chat');
 const { startVoiceEngine, setConversationMode } = require('./voiceEngine');
+const { readRecentMemory } = require('./memory');
 const {
   getRecentEmails,
   sendEmail,
@@ -77,6 +78,12 @@ ipcMain.handle('create-event', async (_event, details) => {
 
 ipcMain.handle('delete-event', async (_event, eventId) => {
   return deleteEvent(eventId);
+});
+
+ipcMain.handle('read-recent-memory', async (_event, count) => {
+  const num = Number.isInteger(count) ? count : parseInt(count, 10);
+  const safeCount = Math.min(Math.max(num || 5, 1), 20);
+  return readRecentMemory(safeCount);
 });
 
 ipcMain.handle('send-email', async (_event, to, subject, body) => {

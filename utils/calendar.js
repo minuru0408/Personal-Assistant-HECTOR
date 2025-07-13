@@ -99,11 +99,36 @@ async function deleteEvent(eventId, calendarId = 'primary') {
   }
 }
 
+async function findEvents({ title, time, maxResults = 10 } = {}) {
+  const calendar = await getCalendar();
+  const params = {
+    calendarId: 'primary',
+    singleEvents: true,
+    orderBy: 'startTime',
+    maxResults,
+  };
+  if (time) {
+    const d = new Date(time);
+    const startOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    params.timeMin = startOfDay.toISOString();
+    params.timeMax = endOfDay.toISOString();
+  } else {
+    params.timeMin = new Date().toISOString();
+  }
+  if (title) {
+    params.q = title;
+  }
+  const res = await calendar.events.list(params);
+  return res.data.items || [];
+}
+
 module.exports = {
   getUpcomingEvents,
   listCalendars,
   createEvent,
-  deleteEvent
+  deleteEvent,
+  findEvents
 };
 
 // Allow manual testing
