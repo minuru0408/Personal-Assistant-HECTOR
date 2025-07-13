@@ -43,4 +43,26 @@ async function appendMemory(time, user, hector) {
   }
 }
 
-module.exports = { appendMemory }
+async function readRecentMemory(count = 5) {
+  if (!sheets) {
+    await initGoogle();
+  }
+  const spreadsheetId = process.env.SPREADSHEET_ID;
+  if (!spreadsheetId) {
+    console.error('SPREADSHEET_ID is not set');
+    return [];
+  }
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${SHEET_NAME}!A:C`,
+    });
+    const rows = res.data.values || [];
+    return rows.slice(-count);
+  } catch (error) {
+    console.error('Failed to read memory:', error.message);
+    return [];
+  }
+}
+
+module.exports = { appendMemory, readRecentMemory }

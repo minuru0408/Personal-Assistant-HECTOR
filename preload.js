@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getUpcomingEvents: (count) => ipcRenderer.invoke('get-upcoming-events', count),
   createEvent: (details) => ipcRenderer.invoke('create-event', details),
   deleteEvent: (id) => ipcRenderer.invoke('delete-event', id),
+  readRecentMemory: (count) => ipcRenderer.invoke('read-recent-memory', count),
   run: (cmd) =>
     new Promise((resolve) =>
       exec(cmd, (error, stdout, stderr) => {
@@ -54,6 +55,7 @@ contextBridge.exposeInMainWorld('systemAPI', {
   getUpcomingEvents: (count) => ipcRenderer.invoke('get-upcoming-events', count),
   createEvent: (details) => ipcRenderer.invoke('create-event', details),
   deleteEvent: (id) => ipcRenderer.invoke('delete-event', id),
+  readRecentMemory: (count) => ipcRenderer.invoke('read-recent-memory', count),
   sendEmail: (to, subject, body) =>
     ipcRenderer.invoke('send-email', to, subject, body),
   analyzeInbox: () => ipcRenderer.invoke('analyze-inbox'),
