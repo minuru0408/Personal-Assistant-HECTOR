@@ -45,7 +45,6 @@ async function createEvent(
   start,
   end,
   calendarId = 'primary',
-  timeZone = 'UTC',
   debug = false
 ) {
   try {
@@ -57,14 +56,8 @@ async function createEvent(
     const event = {
       summary,
       description,
-      start: {
-        dateTime: start,
-        timeZone,
-      },
-      end: {
-        dateTime: end,
-        timeZone,
-      },
+      start,
+      end,
     };
 
     if (debug) {

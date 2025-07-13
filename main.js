@@ -70,8 +70,7 @@ ipcMain.handle('create-event', async (_event, details) => {
     details.description,
     details.start,
     details.end,
-    details.calendarId || 'primary',
-    details.timeZone || 'Asia/Tokyo'
+    details.calendarId || 'primary'
   );
 });
 

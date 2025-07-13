@@ -16,10 +16,9 @@ async function testCalendar() {
     const result = await createEvent(
       summary,
       description,
-      start.toISOString(),
-      end.toISOString(),
-      'primary',
-      'UTC'
+      { dateTime: start.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      { dateTime: end.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      'primary'
     );
 
     console.log('✅ Event Created:', result);
@@ -47,10 +46,9 @@ testCalendar();
     const msg = await createEvent(
       'Test: Shopping Trip',
       'Auto-created event by Hector',
-      start.toISOString(),
-      end.toISOString(),
-      'primary',
-      'UTC'
+      { dateTime: start.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      { dateTime: end.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      'primary'
     );
     console.log(msg);
   } catch (err) {
