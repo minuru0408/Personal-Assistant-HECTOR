@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { chatWithGPT } = require('./chat');
 const { startVoiceEngine, setConversationMode } = require('./voiceEngine');
@@ -26,7 +26,9 @@ function checkEnv() {
   ];
   const missing = required.filter((key) => !process.env[key]);
   if (missing.length) {
+    const message = `Please set: ${missing.join(', ')}`;
     console.error(`Missing environment variables: ${missing.join(', ')}`);
+    dialog.showErrorBox('Missing Environment Variables', message);
     return false;
   }
   return true;
