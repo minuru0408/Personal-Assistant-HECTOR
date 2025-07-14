@@ -4,7 +4,10 @@
   "description": "Personal Assistant Desktop App",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "setup": "npm install && npm --prefix renderer install",
+    "dev": "NODE_ENV=development npm --prefix renderer run dev & electron .",
+    "build": "npm --prefix renderer run build && npm --prefix renderer run export",
+    "start": "NODE_ENV=production electron .",
     "test": "echo \"No tests defined yet\" && exit 0"
   },
   "devDependencies": {
