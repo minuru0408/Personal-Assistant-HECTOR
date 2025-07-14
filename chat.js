@@ -3,11 +3,14 @@ const { appendMemory, readRecentMemory } = require('./memory');
 const { searchWeb } = require('./utils/searchWeb');
 const { calculateExpression } = require('./utils/calculateExpression');
 const { sendEmail } = require('./gmail');
-const { createEvent, deleteEvent, findEvents } = require('./utils/calendar');
+const { createEvent, deleteEvent, findEvents, getUpcomingEvents } = require('./utils/calendar');
 const { parseTimeToday } = require('./utils/time');
 require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Cache events from the last get_calendar_events call
+let lastEvents = [];
 
 const searchWebTool = {
   type: 'function',
@@ -132,7 +135,8 @@ const deleteEventTool = {
         title: { type: 'string', description: 'Event title to match' },
         time: { type: 'string', description: 'Date or start time to match' },
         index: { type: 'integer', description: 'Index of the event when multiple are listed' },
-        eventId: { type: 'string', description: 'Direct ID of the event' }
+        eventId: { type: 'string', description: 'Direct ID of the event' },
+        all: { type: 'boolean', description: 'Delete all matching events' }
       }
     }
   }
@@ -191,9 +195,11 @@ async function chatWithGPT(userText, onToken) {
       - Do not share email content with GPT unless summarizing or analyzing
     • 🗓 Calendar Access:
       - Use get_calendar_events() only to list upcoming events
+        • Store each event's ID, title, and time so you can reference them later
       - Use create_event() to add events
       - Use delete_event() to remove events
-        • When asked to delete or remove an event or reminder (e.g. "delete the shopping reminder" or "delete all reminders"), call delete_event with the title, time, or event ID. Do NOT call get_calendar_events for deletions.
+        • Pass the event ID when possible, using the stored list
+        • When asked to delete or remove an event or reminder (e.g. "delete the shopping reminder" or "delete all reminders"), call delete_event with that ID or index. Do NOT call get_calendar_events for deletions.
     • 🧠 Memory Log:
       - Use read_recent_memory() to recall past conversation entries
     
@@ -339,7 +345,23 @@ async function chatWithGPT(userText, onToken) {
     } else if (name === 'getRecentEmails') {
       result = '[EMAILS]';
     } else if (name === 'get_calendar_events') {
-      result = '[EVENTS]';
+      let args = {};
+      try {
+        const rawArgs = toolCall.function.arguments;
+        args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
+        const count = args.count || 3;
+        lastEvents = await getUpcomingEvents(count);
+        if (lastEvents.length) {
+          result = lastEvents
+            .map((e, i) => `${i + 1}. ${e.summary} at ${e.start}`)
+            .join('\n');
+        } else {
+          result = 'No upcoming events, sir.';
+        }
+      } catch (err) {
+        console.error('❌ Failed to fetch events:', err);
+        result = 'I could not access your calendar, sir.';
+      }
     } else if (name === 'create_event') {
       let args = {};
       try {
@@ -368,27 +390,37 @@ async function chatWithGPT(userText, onToken) {
       try {
         const rawArgs = toolCall.function.arguments;
         args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
+
         let events = [];
         if (args.eventId) {
           await deleteEvent(args.eventId);
+          lastEvents = lastEvents.filter((e) => e.id !== args.eventId);
           result = 'Deleted, sir.';
+        } else if (args.index !== undefined && lastEvents[parseInt(args.index, 10) - 1]) {
+          const idx = parseInt(args.index, 10) - 1;
+          const ev = lastEvents[idx];
+          await deleteEvent(ev.id);
+          lastEvents.splice(idx, 1);
+          result = `Deleted "${ev.summary}", sir.`;
         } else {
           events = await findEvents({ title: args.title, time: args.time });
-          if (args.index !== undefined) {
-            const idx = parseInt(args.index, 10) - 1;
-            const ev = events[idx];
-            if (ev) {
-              await deleteEvent(ev.id);
-              result = `Deleted "${ev.summary}", sir.`;
+          if (args.all) {
+            if (events.length) {
+              for (const ev of events) {
+                await deleteEvent(ev.id);
+              }
+              lastEvents = lastEvents.filter((e) => !events.find((ev) => ev.id === e.id));
+              result = `Removed ${events.length} events, sir.`;
             } else {
-              result = 'I could not find that selection, sir.';
+              result = 'No matching events found, sir.';
             }
           } else if (events.length === 1) {
             await deleteEvent(events[0].id);
+            lastEvents = lastEvents.filter((e) => e.id !== events[0].id);
             result = `Deleted "${events[0].summary}", sir.`;
           } else if (events.length > 1) {
             const list = events
-              .map((e, i) => `${i + 1}. ${e.summary} at ${e.start.dateTime || e.start.date}`)
+              .map((e, i) => `${i + 1}. ${e.summary} at ${e.start.dateTime || e.start.date || e.start}`)
               .join('\n');
             result = `I found multiple events:\n${list}\nWhich should I remove, sir?`;
           } else {

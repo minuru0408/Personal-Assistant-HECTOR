@@ -22,6 +22,7 @@ async function getUpcomingEvents(count = 3) {
 
   const events = res.data.items || [];
   return events.map((e) => ({
+    id: e.id,
     summary: e.summary || 'No Title',
     start: e.start?.dateTime || e.start?.date || 'No Start Time',
     description: e.description || '',
