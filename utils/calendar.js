@@ -24,8 +24,7 @@ async function getUpcomingEvents(count = 3) {
   return events.map((e) => ({
     id: e.id,
     summary: e.summary || 'No Title',
-    start: e.start?.dateTime || e.start?.date || 'No Start Time',
-    description: e.description || '',
+    start: e.start?.dateTime || e.start?.date || '',
   }));
 }
 

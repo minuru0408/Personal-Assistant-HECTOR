@@ -1,8 +1,32 @@
+function toLocalISOString(date) {
+  const tzOffset = -date.getTimezoneOffset();
+  const sign = tzOffset >= 0 ? '+' : '-';
+  const pad = (n) => String(Math.floor(Math.abs(n))).padStart(2, '0');
+  return (
+    date.getFullYear() +
+    '-' +
+    pad(date.getMonth() + 1) +
+    '-' +
+    pad(date.getDate()) +
+    'T' +
+    pad(date.getHours()) +
+    ':' +
+    pad(date.getMinutes()) +
+    ':' +
+    pad(date.getSeconds()) +
+    sign +
+    pad(tzOffset / 60) +
+    ':' +
+    pad(tzOffset % 60)
+  );
+}
+
 function parseTimeToday(text) {
   if (!text) return null;
 
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const match = String(text).trim().match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+  const match = String(text)
+    .trim()
+    .match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
   if (!match) return null;
 
   let hour = parseInt(match[1], 10);
@@ -13,19 +37,16 @@ function parseTimeToday(text) {
   if (period === 'am' && hour === 12) hour = 0;
 
   const now = new Date();
-  const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
-  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+  const date = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    hour,
+    minute,
+    0
+  );
 
-  return {
-    start: {
-      dateTime: startDate.toISOString(),
-      timeZone
-    },
-    end: {
-      dateTime: endDate.toISOString(),
-      timeZone
-    }
-  };
+  return toLocalISOString(date);
 }
 
-module.exports = { parseTimeToday };
+module.exports = { parseTimeToday, toLocalISOString };
