@@ -3,8 +3,8 @@ const { appendMemory, readRecentMemory } = require('./memory');
 const { searchWeb } = require('./utils/searchWeb');
 const { calculateExpression } = require('./utils/calculateExpression');
 const { sendEmail } = require('./gmail');
-const { createEvent, deleteEvent, findEvents, getUpcomingEvents } = require('./utils/calendar');
-const { parseTimeToday } = require('./utils/time');
+const { createEvent, deleteEvent, getUpcomingEvents } = require('./utils/calendar');
+const { parseTimeToday, toLocalISOString } = require('./utils/time');
 require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -369,9 +369,15 @@ async function chatWithGPT(userText, onToken) {
         args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
         console.log(`📅 Creating event: "${args.summary}"`);
 
-        const times = parseTimeToday(args.start);
-        const start = times ? times.start : null;
-        const end = times ? times.end : null;
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const startStr = parseTimeToday(args.start);
+        const start = startStr ? { dateTime: startStr, timeZone } : null;
+        let end = null;
+        if (startStr) {
+          const endDate = new Date(startStr);
+          endDate.setHours(endDate.getHours() + 1);
+          end = { dateTime: toLocalISOString(endDate), timeZone };
+        }
 
         await createEvent(
           args.summary,
@@ -380,7 +386,7 @@ async function chatWithGPT(userText, onToken) {
           end,
           args.calendarId || 'primary'
         );
-        result = `\ud83d\udcc5 I\u2019ve scheduled "${args.summary}" at ${start.dateTime} (${start.timeZone}), sir.`;
+        result = `\ud83d\udcc5 I\u2019ve scheduled "${args.summary}" at ${start.dateTime} (${timeZone}), sir.`;
       } catch (err) {
         console.error('❌ Failed to create event:', err);
         result = `My apologies, sir. I couldn\u2019t add that to your calendar.`;
@@ -391,41 +397,43 @@ async function chatWithGPT(userText, onToken) {
         const rawArgs = toolCall.function.arguments;
         args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
 
-        let events = [];
         if (args.eventId) {
           await deleteEvent(args.eventId);
           lastEvents = lastEvents.filter((e) => e.id !== args.eventId);
           result = 'Deleted, sir.';
-        } else if (args.index !== undefined && lastEvents[parseInt(args.index, 10) - 1]) {
+        } else if (args.index !== undefined) {
           const idx = parseInt(args.index, 10) - 1;
           const ev = lastEvents[idx];
-          await deleteEvent(ev.id);
-          lastEvents.splice(idx, 1);
-          result = `Deleted "${ev.summary}", sir.`;
-        } else {
-          events = await findEvents({ title: args.title, time: args.time });
-          if (args.all) {
-            if (events.length) {
-              for (const ev of events) {
-                await deleteEvent(ev.id);
-              }
-              lastEvents = lastEvents.filter((e) => !events.find((ev) => ev.id === e.id));
-              result = `Removed ${events.length} events, sir.`;
-            } else {
-              result = 'No matching events found, sir.';
+          if (ev) {
+            await deleteEvent(ev.id);
+            lastEvents.splice(idx, 1);
+            result = `Deleted "${ev.summary}", sir.`;
+          } else {
+            result = 'No matching event found, sir.';
+          }
+        } else if (args.title) {
+          const title = args.title.toLowerCase();
+          let matches = lastEvents.filter((e) => e.summary.toLowerCase().includes(title));
+          if (args.all && matches.length) {
+            for (const ev of matches) {
+              await deleteEvent(ev.id);
             }
-          } else if (events.length === 1) {
-            await deleteEvent(events[0].id);
-            lastEvents = lastEvents.filter((e) => e.id !== events[0].id);
-            result = `Deleted "${events[0].summary}", sir.`;
-          } else if (events.length > 1) {
-            const list = events
-              .map((e, i) => `${i + 1}. ${e.summary} at ${e.start.dateTime || e.start.date || e.start}`)
+            lastEvents = lastEvents.filter((e) => !matches.find((m) => m.id === e.id));
+            result = `Removed ${matches.length} events, sir.`;
+          } else if (matches.length === 1) {
+            await deleteEvent(matches[0].id);
+            lastEvents = lastEvents.filter((e) => e.id !== matches[0].id);
+            result = `Deleted "${matches[0].summary}", sir.`;
+          } else if (matches.length > 1) {
+            const list = matches
+              .map((e, i) => `${i + 1}. ${e.summary} at ${e.start}`)
               .join('\n');
             result = `I found multiple events:\n${list}\nWhich should I remove, sir?`;
           } else {
             result = 'No matching events found, sir.';
           }
+        } else {
+          result = 'No matching events found, sir.';
         }
       } catch (err) {
         console.error('❌ Failed to delete event:', err);
