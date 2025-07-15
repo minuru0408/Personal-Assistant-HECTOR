@@ -15,4 +15,5 @@ request is sent without them. Web search requires `GOOGLE_API_KEY` and
 4. Download an OAuth client JSON from the Google Cloud console and save it as `credentials.json` in this folder. Then run `node gmail.js` once and follow the link to grant access. This creates `token.json` so Hector can access Gmail and Calendar.
 5. Install SoX for audio recording (for example, `brew install sox`). Run `sox --version` to check that it works. If your computer asks for microphone access, allow it so recording can start.
 6. Make sure the `wav` package is installed; it encodes the microphone input as a proper WAV file.
-7. Start the app with `npm start`.
+7. Build the renderer with `npm run build` so the `renderer/out` folder is created.
+8. Start the app with `npm start`.
