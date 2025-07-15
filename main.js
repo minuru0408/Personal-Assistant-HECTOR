@@ -3,7 +3,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
 const { chatWithGPT } = require('./chat');
-const { startVoiceEngine, setConversationMode } = require('./voiceEngine');
+const { startVoiceEngine } = require('./voiceEngine');
 const { readRecentMemory } = require('./memory');
 const {
   getRecentEmails,
@@ -97,10 +97,6 @@ ipcMain.handle('analyze-inbox', async () => {
   return analyzeInbox();
 });
 
-ipcMain.on('toggle-conversation', (event, enabled) => {
-  setConversationMode(enabled);
-  BrowserWindow.getAllWindows().forEach(win => win.webContents.send('conversation-mode', enabled));
-});
 
 ipcMain.on('clear-chat', () => {
   console.log('[hector] \ud83e\udd9a clearing chat');
@@ -124,9 +120,6 @@ function createWindow() {
   } else {
     win.loadFile(path.join(__dirname, 'renderer', 'out', 'index.html'));
   }
-  win.webContents.on('did-finish-load', () => {
-    win.webContents.send('conversation-mode', true);
-  });
 }
 
 app.whenReady().then(() => {
