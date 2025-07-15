@@ -11,6 +11,15 @@ require('dotenv').config();
 // Track if a recording is currently happening to avoid overlaps
 let isRecording = false;
 let isTranscribing = false;
+let conversationMode = true;
+
+function setConversationMode(enabled) {
+  conversationMode = enabled;
+  const win = BrowserWindow.getAllWindows()[0];
+  if (!enabled) {
+    win?.webContents.send('cancel-tts');
+  }
+}
 
 function levenshtein(a, b) {
   const matrix = Array.from({ length: b.length + 1 }, () => []);
@@ -118,6 +127,10 @@ async function startVoiceEngine() {
   let lastGptReply = '';
   const history = [];
   while (true) {
+    if (!conversationMode) {
+      await new Promise(r => setTimeout(r, 500));
+      continue;
+    }
     if (isRecording) {
       // Skip if a previous recording hasn't finished yet
       await new Promise(r => setTimeout(r, 100));
@@ -306,4 +319,4 @@ async function startVoiceEngine() {
   }
 }
 
-module.exports = { startVoiceEngine };
+module.exports = { startVoiceEngine, setConversationMode };

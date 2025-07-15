@@ -1,9 +1,8 @@
 require('dotenv').config();
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const isDev = process.env.NODE_ENV === 'development';
 const { chatWithGPT } = require('./chat');
-const { startVoiceEngine } = require('./voiceEngine');
+const { startVoiceEngine, setConversationMode } = require('./voiceEngine');
 const { readRecentMemory } = require('./memory');
 const {
   getRecentEmails,
@@ -27,9 +26,7 @@ function checkEnv() {
   ];
   const missing = required.filter((key) => !process.env[key]);
   if (missing.length) {
-    const message = `Please set: ${missing.join(', ')}`;
     console.error(`Missing environment variables: ${missing.join(', ')}`);
-    dialog.showErrorBox('Missing Environment Variables', message);
     return false;
   }
   return true;
@@ -97,6 +94,10 @@ ipcMain.handle('analyze-inbox', async () => {
   return analyzeInbox();
 });
 
+ipcMain.on('toggle-conversation', (event, enabled) => {
+  setConversationMode(enabled);
+  BrowserWindow.getAllWindows().forEach(win => win.webContents.send('conversation-mode', enabled));
+});
 
 ipcMain.on('clear-chat', () => {
   console.log('[hector] \ud83e\udd9a clearing chat');
@@ -115,11 +116,10 @@ function createWindow() {
     }
   });
 
-  if (isDev) {
-    win.loadURL('http://localhost:3000');
-  } else {
-    win.loadFile(path.join(__dirname, 'renderer', 'out', 'index.html'));
-  }
+  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  win.webContents.on('did-finish-load', () => {
+    win.webContents.send('conversation-mode', true);
+  });
 }
 
 app.whenReady().then(() => {
