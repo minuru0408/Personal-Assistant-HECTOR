@@ -116,7 +116,12 @@ function createWindow() {
     }
   });
 
-  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  const isDev = !app.isPackaged;
+  if (isDev) {
+    win.loadURL('http://localhost:3000');
+  } else {
+    win.loadFile(path.join(__dirname, 'renderer', 'react-ui', 'build', 'index.html'));
+  }
   win.webContents.on('did-finish-load', () => {
     win.webContents.send('conversation-mode', true);
   });
