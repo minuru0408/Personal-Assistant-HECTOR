@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
+const isDev = process.env.NODE_ENV === 'development';
 const { chatWithGPT } = require('./chat');
 const { startVoiceEngine, setConversationMode } = require('./voiceEngine');
 const { readRecentMemory } = require('./memory');
@@ -118,7 +119,6 @@ function createWindow() {
     }
   });
 
-  const isDev = process.env.NODE_ENV === 'development';
   if (isDev) {
     win.loadURL('http://localhost:3000');
   } else {

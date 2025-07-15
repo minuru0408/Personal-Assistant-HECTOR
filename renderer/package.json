@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "export": "next export",
+    "setup": "npm install",
     "dev": "next dev",
-    "start": "next start",
-    "build:prod": "npm run build && npm run export"
+    "build": "next build && next export",
+    "start": "next start"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
