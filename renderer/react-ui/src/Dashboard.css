@@ -1,0 +1,26 @@
+.layout {
+  background: #1e1e1e;
+  min-height: 100vh;
+}
+
+.widget {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.widget-header {
+  cursor: move;
+  padding: 8px;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.widget-body {
+  padding: 8px;
+  flex: 1;
+}
