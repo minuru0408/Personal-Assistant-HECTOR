@@ -5,8 +5,8 @@
   "main": "main.js",
   "scripts": {
     "setup": "npm install && npm --prefix renderer install",
-    "dev": "NODE_ENV=development npm --prefix renderer run dev & electron .",
-    "build": "npm --prefix renderer run build && npm --prefix renderer run export",
+    "dev": "NODE_ENV=development npm --prefix renderer run dev & NODE_ENV=development electron .",
+    "build": "npm --prefix renderer run build",
     "start": "NODE_ENV=production electron .",
     "test": "echo \"No tests defined yet\" && exit 0"
   },
