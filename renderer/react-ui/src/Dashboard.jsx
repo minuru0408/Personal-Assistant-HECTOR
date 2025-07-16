@@ -1,6 +1,6 @@
-"use client"
+import React, { useState } from "react"
+import "./Dashboard.css"
 
-import { useState } from "react"
 import { DashboardCard } from "./components/dashboard-card"
 import { WeatherWidget } from "./components/weather-widget"
 import { StockTicker } from "./components/stock-ticker"
@@ -13,8 +13,8 @@ import { MiniChart } from "./components/mini-chart"
 import { AIOrb } from "./components/ai-orb"
 import { VolumeControl } from "./components/volume-control" // New import
 
-export default function FuturisticDashboard() {
-  const [assistantState, setAssistantState] = useState<"idle" | "listening" | "talking">("idle")
+export default function Dashboard() {
+  const [assistantState, setAssistantState] = useState("idle")
   const activityData = [12, 19, 15, 25, 22, 18, 28, 24, 20, 16, 21, 19]
 
   return (
