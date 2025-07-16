@@ -1,3 +1,9 @@
+
+:root {
+  --neon-color: 0,180,255;
+  --glow-opacity: 0.6;
+}
+
 .layout {
   background: #1e1e1e;
   min-height: 100vh;
@@ -10,6 +16,26 @@
   color: #fff;
   display: flex;
   flex-direction: column;
+  border: 1px solid rgba(var(--neon-color), 0.75);
+  box-shadow: 0 0 10px rgba(var(--neon-color), var(--glow-opacity));
+  animation: pulse 3s infinite;
+  transition: box-shadow 0.3s;
+}
+
+.widget:hover {
+  box-shadow: 0 0 15px rgba(var(--neon-color), var(--glow-opacity));
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 10px rgba(var(--neon-color), var(--glow-opacity));
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(var(--neon-color), 1);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(var(--neon-color), var(--glow-opacity));
+  }
 }
 
 .widget-header {
