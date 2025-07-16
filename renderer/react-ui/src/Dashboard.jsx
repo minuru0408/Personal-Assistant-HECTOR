@@ -1,17 +1,17 @@
 import React, { useState } from "react"
 import "./Dashboard.css"
 
-import { DashboardCard } from "./components/dashboard-card"
-import { WeatherWidget } from "./components/weather-widget"
-import { StockTicker } from "./components/stock-ticker"
-import { CalendarWidget } from "./components/calendar-widget"
-import { FinanceOverview } from "./components/finance-overview"
-import { ChatAssistant } from "./components/chat-assistant"
-import { SystemStats } from "./components/system-stats"
-import { CircularProgress } from "./components/circular-progress"
-import { MiniChart } from "./components/mini-chart"
-import { AIOrb } from "./components/ai-orb"
-import { VolumeControl } from "./components/volume-control" // New import
+import { DashboardCard } from "../../components/dashboard-card"
+import { WeatherWidget } from "../../components/weather-widget"
+import { StockTicker } from "../../components/stock-ticker"
+import { CalendarWidget } from "../../components/calendar-widget"
+import { FinanceOverview } from "../../components/finance-overview"
+import { ChatAssistant } from "../../components/chat-assistant"
+import { SystemStats } from "../../components/system-stats"
+import { CircularProgress } from "../../components/circular-progress"
+import { MiniChart } from "../../components/mini-chart"
+import { AIOrb } from "../../components/ai-orb"
+import { VolumeControl } from "../../components/volume-control" // New import
 
 export default function Dashboard() {
   const [assistantState, setAssistantState] = useState("idle")
