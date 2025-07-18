@@ -386,7 +386,8 @@ async function chatWithGPT(userText, onToken) {
           end,
           args.calendarId || 'primary'
         );
-        result = `\ud83d\udcc5 I\u2019ve scheduled "${args.summary}" at ${start.dateTime} (${timeZone}), sir.`;
+        const when = start ? `${start.dateTime} (${timeZone})` : 'an unspecified time';
+        result = `\ud83d\udcc5 I\u2019ve scheduled "${args.summary}" at ${when}, sir.`;
       } catch (err) {
         console.error('❌ Failed to create event:', err);
         result = `My apologies, sir. I couldn\u2019t add that to your calendar.`;
